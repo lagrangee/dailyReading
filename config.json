@@ -1,0 +1,21 @@
+{
+  "youtube_whitelist": [
+    "@a16z",
+    "@lexfridman"
+  ],
+  "bilibili_whitelist": [
+    "3546710527707195"
+  ],
+  "rss_feeds": [],
+  "hn_config": {
+    "keywords": [
+      "AI",
+      "LLM",
+      "Machine Learning",
+      "OpenAI",
+      "Anthropic"
+    ],
+    "minPoints": 100,
+    "maxResults": 3
+  }
+}

@@ -1,0 +1,134 @@
+[
+  {
+    "id": "223e33e5-41db-4bf6-9f02-6245bcb93e98",
+    "timestamp": "1/13/2026, 12:38:38 PM",
+    "status": "success",
+    "message": "Successfully synced 2 items to NotebookLM.",
+    "linksScraped": 2,
+    "notebookSyncStatus": "success",
+    "details": [
+      {
+        "title": "Marc Andreessen's 2026 Outlook: AI Timelines, US vs. China, and The Price of AI",
+        "url": "https://www.youtube.com/watch?v=xRh2sVcNXQ8&pp=ygUFQGExNno%3D",
+        "source": "YouTube"
+      },
+      {
+        "title": "Infinity, Paradoxes, Gödel Incompleteness & the Mathematical Multiverse | Lex Fridman Podcast #488",
+        "url": "https://www.youtube.com/watch?v=14OPT6CcsH4&pp=ygULQGxleGZyaWRtYW4%3D",
+        "source": "YouTube"
+      }
+    ],
+    "notebookUrl": "https://notebooklm.google.com/notebook/5c849fa6-b914-4119-8991-c55e74eb44d8"
+  },
+  {
+    "id": "b028ca65-f977-4fb1-bff5-a4bcdeee8f26",
+    "timestamp": "1/13/2026, 12:29:28 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0,
+    "notebookSyncStatus": "pending"
+  },
+  {
+    "id": "5ac66f98-9a7f-4580-b370-e54504d94c22",
+    "timestamp": "1/13/2026, 12:27:53 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0,
+    "notebookSyncStatus": "pending"
+  },
+  {
+    "id": "6af92114-d32a-4210-9469-87ba3567edad",
+    "timestamp": "1/13/2026, 12:25:47 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0,
+    "notebookSyncStatus": "pending"
+  },
+  {
+    "timestamp": "1/13/2026, 11:44:46 AM",
+    "status": "success",
+    "message": "Successfully synced 1 items.",
+    "linksScraped": 1,
+    "notebookUrl": "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fnotebooklm.google.com%2F&dsh=S-1810415960%3A1768275883743646&followup=https%3A%2F%2Fnotebooklm.google.com%2F&ifkv=AXbMIuBW6qKbJQlRStRldlp3vLeOH2Pcp8YjrcAY1lK-87sTmjxQTgSyppBB-Zbf-4nZQgvOwcE9FQ&osid=1&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin",
+    "details": [
+      {
+        "title": "The chess bot on Delta Air Lines will destroy you (2024) [video]",
+        "url": "https://www.youtube.com/watch?v=c0mLhHDcY3I",
+        "source": "Hacker News"
+      }
+    ]
+  },
+  {
+    "timestamp": "1/13/2026, 11:25:22 AM",
+    "status": "success",
+    "message": "Successfully synced 5 items.",
+    "linksScraped": 5,
+    "notebookUrl": "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fnotebooklm.google.com%2F&dsh=S-2127071314%3A1768274718795741&followup=https%3A%2F%2Fnotebooklm.google.com%2F&ifkv=AXbMIuAwZ7LeEtQoML0iKso5jIVenm5pXEkP1B2LMCoe-H2TGHeWtpu7t09Vb1FhK-TL8DeLV_O-&osid=1&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin",
+    "details": [
+      {
+        "title": "Marc Andreessen's 2026 Outlook: AI Timelines, US vs. China, and The Price of AI",
+        "url": "https://www.youtube.com/watch?v=xRh2sVcNXQ8",
+        "source": "YouTube"
+      },
+      {
+        "title": "Bilibili Content",
+        "url": "https://www.bilibili.com/video/BV1FgrzB5Es4/",
+        "source": "Bilibili"
+      },
+      {
+        "title": "TimeCapsuleLLM: LLM trained only on data from 1800-1875",
+        "url": "https://github.com/haykgrigo3/TimeCapsuleLLM",
+        "source": "Hacker News"
+      },
+      {
+        "title": "Anthropic made a mistake in cutting off third-party clients",
+        "url": "https://archaeologist.dev/artifacts/anthropic",
+        "source": "Hacker News"
+      },
+      {
+        "title": "Ai, Japanese chimpanzee who counted and painted dies at 49",
+        "url": "https://www.bbc.com/news/articles/cj9r3zl2ywyo",
+        "source": "Hacker News"
+      }
+    ]
+  },
+  {
+    "timestamp": "1/12/2026, 7:33:30 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0
+  },
+  {
+    "timestamp": "1/12/2026, 7:32:45 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0
+  },
+  {
+    "timestamp": "1/12/2026, 7:29:28 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0
+  },
+  {
+    "timestamp": "1/12/2026, 7:24:11 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0
+  },
+  {
+    "timestamp": "1/12/2026, 7:23:37 PM",
+    "status": "success",
+    "message": "Successfully synced 2 sources to NotebookLM.",
+    "linksScraped": 2,
+    "details": [
+      {
+        "platform": "Hacker News",
+        "links": [
+          "Don't fall into the anti-AI hype",
+          "Poison Fountain"
+        ]
+      }
+    ]
+  }
+]
