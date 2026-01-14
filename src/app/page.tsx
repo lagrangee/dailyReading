@@ -58,18 +58,23 @@ export default function Home() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [sessionStatus, setSessionStatus] = useState<Record<string, boolean>>({});
+  const [loadingPlatform, setLoadingPlatform] = useState<string | null>(null);
   const [runningStatus, setRunningStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    const [configRes, logsRes, statusRes] = await Promise.all([
-      fetch('/api/config'),
-      fetch('/api/logs'),
-      fetch('/api/status')
-    ]);
-    setConfig(await configRes.json());
-    setLogs(await logsRes.json());
-    setSessionStatus(await statusRes.json());
+    try {
+      const [configRes, logsRes, statusRes] = await Promise.all([
+        fetch('/api/config'),
+        fetch('/api/logs'),
+        fetch('/api/status')
+      ]);
+      setConfig(await configRes.json());
+      setLogs(await logsRes.json());
+      setSessionStatus(await statusRes.json());
+    } catch (e) {
+      console.error('Failed to fetch data:', e);
+    }
   };
 
   useEffect(() => {
@@ -110,13 +115,20 @@ export default function Home() {
     const ok = confirm(`A browser window will open for ${platform} login. Close the window after you finish logging in. Proceed?`);
     if (!ok) return;
 
-    await fetch('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ platform }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    // 登录完成后刷新状态
-    fetchData();
+    setLoadingPlatform(platform);
+    try {
+      await fetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ platform }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      // 登录完成后刷新状态
+      await fetchData();
+    } catch (e) {
+      console.error('Login failed:', e);
+    } finally {
+      setLoadingPlatform(null);
+    }
   };
 
   if (loading || !config) return <div style={{ display: 'grid', placeItems: 'center', height: '100vh', fontSize: '1.2rem', opacity: 0.5 }}>Loading Workspace...</div>;
@@ -202,11 +214,12 @@ export default function Home() {
 
             <button
               onClick={() => triggerLogin('notebooklm')}
+              disabled={loadingPlatform === 'notebooklm'}
               style={{
                 padding: '1rem 2rem',
                 fontSize: '0.9rem',
                 borderRadius: '16px',
-                background: sessionStatus.notebooklm ? 'hsl(var(--secondary) / 0.1)' : 'hsl(var(--destructive) / 0.8)',
+                background: loadingPlatform === 'notebooklm' ? 'hsl(var(--secondary) / 0.3)' : (sessionStatus.notebooklm ? 'hsl(var(--secondary) / 0.1)' : 'hsl(var(--destructive) / 0.8)'),
                 border: `1px solid ${sessionStatus.notebooklm ? 'hsl(var(--secondary) / 0.3)' : 'hsl(var(--destructive))'}`,
                 color: 'white',
                 fontWeight: '600',
@@ -214,12 +227,22 @@ export default function Home() {
                 alignItems: 'center',
                 gap: '0.8rem',
                 whiteSpace: 'nowrap',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                cursor: loadingPlatform === 'notebooklm' ? 'wait' : 'pointer'
               }}
             >
-              {!sessionStatus.notebooklm && <div className="pulse" style={{ background: 'white' }} />}
-              <span>{sessionStatus.notebooklm ? '✅' : '🔐'}</span>
-              <span>{sessionStatus.notebooklm ? 'NotebookLM authorized' : 'NotebookLM Auth Required'}</span>
+              {loadingPlatform === 'notebooklm' ? (
+                <>
+                  <div className="pulse" style={{ background: 'white' }} />
+                  <span>Authorizing...</span>
+                </>
+              ) : (
+                <>
+                  {!sessionStatus.notebooklm && <div className="pulse" style={{ background: 'white' }} />}
+                  <span>{sessionStatus.notebooklm ? '✅' : '🔐'}</span>
+                  <span>{sessionStatus.notebooklm ? 'NotebookLM authorized' : 'NotebookLM Auth Required'}</span>
+                </>
+              )}
             </button>
 
             <button onClick={triggerRun} disabled={!!runningStatus} style={{ padding: '1rem 2.5rem', fontSize: '1rem', borderRadius: '16px', background: 'hsl(var(--accent))', color: 'white' }}>

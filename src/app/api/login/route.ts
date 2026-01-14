@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
             launchOptions.executablePath = config.chrome_exe_path;
             // 额外添加脚本中的防拦截参数
             launchOptions.ignoreDefaultArgs.push('--no-sandbox', '--disable-setuid-sandbox', '--use-mock-keychain');
+            if (!launchOptions.args) launchOptions.args = [];
+            launchOptions.args.push('--password-store=basic'); // 关键点：统一存储模式
         } else {
             launchOptions.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
         }
@@ -58,10 +60,14 @@ export async function POST(req: NextRequest) {
             await page.goto('https://notebooklm.google.com/');
         }
 
-        // 等待用户关闭浏览器窗口
+        // 等待用户关闭授权页面
         await new Promise<void>((resolve) => {
-            context.on('close', () => resolve());
+            page.on('close', () => resolve());
+            context.on('close', () => resolve()); // 保险起见，同时也监听 context
         });
+
+        // 尝试正常关闭 context 以清理资源
+        await context.close().catch(() => { });
 
         return NextResponse.json({ success: true, message: `${platform} session saved.` });
     } catch (error) {

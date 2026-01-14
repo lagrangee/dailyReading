@@ -26,6 +26,7 @@ export class NotebookLMClient {
             ],
             args: [
                 '--disable-blink-features=AutomationControlled',
+                '--password-store=basic', // 显式使用 basic 存储，防止 macOS Keychain 权限冲突
                 '--window-size=1280,800'
             ],
         });
