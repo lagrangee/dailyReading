@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chromium } from 'playwright';
 import { getSessionDir } from '@/lib/session_manager';
+import { readConfig } from '@/lib/config';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
     const { platform } = await req.json();
@@ -9,23 +11,37 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid platform' }, { status: 400 });
     }
 
-    // 所有平台都使用项目内的独立会话目录
-    const sessionDir = await getSessionDir(platform as 'bilibili' | 'youtube' | 'notebooklm');
+    // 为不同平台确定会话目录
+    let sessionDir: string;
+    if (platform === 'notebooklm') {
+        // 与 NotebookLMClient 保持一致，使用专门的 profile 目录
+        sessionDir = path.join(process.cwd(), '.sessions', 'notebooklm_profile');
+    } else {
+        sessionDir = await getSessionDir(platform as 'bilibili' | 'youtube');
+    }
 
     try {
-        // 使用独立配置文件目录，不会与用户正在使用的 Chrome 冲突
-        const context = await chromium.launchPersistentContext(sessionDir, {
+        const launchOptions: any = {
             headless: false,
-            // 不指定 channel，使用 Playwright 自带的 Chromium
-            userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             viewport: { width: 1280, height: 800 },
-            // 这些参数可以帮助模拟真实浏览器
             args: [
                 '--disable-blink-features=AutomationControlled',
                 '--disable-features=IsolateOrigins,site-per-process',
             ],
             ignoreDefaultArgs: ['--enable-automation'],
-        });
+        };
+
+        // 如果是 NotebookLM，强制使用系统原生 Chrome 以绕过指纹检测
+        if (platform === 'notebooklm') {
+            const config = await readConfig();
+            launchOptions.executablePath = config.chrome_exe_path;
+            // 额外添加脚本中的防拦截参数
+            launchOptions.ignoreDefaultArgs.push('--no-sandbox', '--disable-setuid-sandbox', '--use-mock-keychain');
+        } else {
+            launchOptions.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+        }
+
+        const context = await chromium.launchPersistentContext(sessionDir, launchOptions);
 
         const page = await context.newPage();
 

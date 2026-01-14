@@ -1,5 +1,6 @@
 import { chromium, BrowserContext, Page, Browser } from 'playwright';
 import { ScrapedLink } from './scrapers/base';
+import { readConfig } from './config';
 import path from 'path';
 
 export class NotebookLMClient {
@@ -10,9 +11,10 @@ export class NotebookLMClient {
 
         // 使用持久化配置目录，而不是 JSON 文件
         const profilePath = path.join(process.cwd(), '.sessions', 'notebooklm_profile');
+        const config = await readConfig();
 
         this.context = await chromium.launchPersistentContext(profilePath, {
-            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            executablePath: config.chrome_exe_path,
             headless: false,
             viewport: null,
             // 彻底屏蔽所有 Playwright 默认附带的、具有“机器人”特征的参数

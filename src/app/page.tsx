@@ -57,13 +57,19 @@ function TagInput({ label, icon, tags, placeholder, onTagsChange }: TagInputProp
 export default function Home() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [sessionStatus, setSessionStatus] = useState<Record<string, boolean>>({});
   const [runningStatus, setRunningStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    const [configRes, logsRes] = await Promise.all([fetch('/api/config'), fetch('/api/logs')]);
+    const [configRes, logsRes, statusRes] = await Promise.all([
+      fetch('/api/config'),
+      fetch('/api/logs'),
+      fetch('/api/status')
+    ]);
     setConfig(await configRes.json());
     setLogs(await logsRes.json());
+    setSessionStatus(await statusRes.json());
   };
 
   useEffect(() => {
@@ -71,6 +77,15 @@ export default function Home() {
   }, []);
 
   const triggerRun = () => {
+    // 前置守卫：检查 NotebookLM 是否已授权
+    if (!sessionStatus.notebooklm) {
+      const proceed = confirm('NotebookLM hasn\'t been authorized yet. The sync might fail. Would you like to authorize first?');
+      if (proceed) {
+        triggerLogin('notebooklm');
+        return;
+      }
+    }
+
     setRunningStatus('Initializing...');
     const eventSource = new EventSource('/api/run');
     eventSource.onmessage = (event) => {
@@ -100,6 +115,8 @@ export default function Home() {
       body: JSON.stringify({ platform }),
       headers: { 'Content-Type': 'application/json' }
     });
+    // 登录完成后刷新状态
+    fetchData();
   };
 
   if (loading || !config) return <div style={{ display: 'grid', placeItems: 'center', height: '100vh', fontSize: '1.2rem', opacity: 0.5 }}>Loading Workspace...</div>;
@@ -141,6 +158,21 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          <div className="section" style={{ marginBottom: '2.5rem' }}>
+            <div className="section-title" style={{ fontSize: '0.9rem', opacity: 0.6, textTransform: 'uppercase', marginBottom: '1rem' }}>
+              <span>🌐</span> <span style={{ marginLeft: '0.5rem' }}>System Browser</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <label style={{ fontSize: '0.7rem', opacity: 0.4, display: 'block' }}>Google Chrome Path (Required for NotebookLM)</label>
+              <input
+                value={config.chrome_exe_path}
+                onChange={(e) => setConfig({ ...config, chrome_exe_path: e.target.value })}
+                placeholder="/Applications/Google Chrome.app/..."
+                style={{ fontSize: '0.85rem' }}
+              />
+            </div>
+          </div>
         </nav>
 
         <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
@@ -150,12 +182,6 @@ export default function Home() {
           >
             💾 Save Config
           </button>
-
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => triggerLogin('youtube')} style={{ flex: 1, padding: '0.6rem', fontSize: '1.2rem', justifyContent: 'center', background: '#ff000022', border: '1px solid #ff000044' }} title="Login YouTube">📺</button>
-            <button onClick={() => triggerLogin('bilibili')} style={{ flex: 1, padding: '0.6rem', fontSize: '1.2rem', justifyContent: 'center', background: '#00a1d622', border: '1px solid #00a1d644' }} title="Login Bilibili">🎬</button>
-            <button onClick={() => triggerLogin('notebooklm')} style={{ flex: 1, padding: '0.6rem', fontSize: '1.2rem', justifyContent: 'center', background: '#4285f422', border: '1px solid #4285f444' }} title="Login NotebookLM">📓</button>
-          </div>
         </div>
       </aside>
 
@@ -166,14 +192,37 @@ export default function Home() {
             <h2 style={{ fontSize: '2.5rem', fontWeight: '800' }}>Intelligence Feed</h2>
             <p style={{ opacity: 0.4 }}>Monitor your automated knowledge pipeline.</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {runningStatus && (
               <div className="glass" style={{ padding: '0.8rem 1.5rem', color: 'hsl(var(--secondary))', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 <div className="pulse" />
                 <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{runningStatus}</span>
               </div>
             )}
-            <button onClick={triggerRun} disabled={!!runningStatus} style={{ padding: '1rem 2.5rem', fontSize: '1rem', borderRadius: '16px' }}>
+
+            <button
+              onClick={() => triggerLogin('notebooklm')}
+              style={{
+                padding: '1rem 2rem',
+                fontSize: '0.9rem',
+                borderRadius: '16px',
+                background: sessionStatus.notebooklm ? 'hsl(var(--secondary) / 0.1)' : 'hsl(var(--destructive) / 0.8)',
+                border: `1px solid ${sessionStatus.notebooklm ? 'hsl(var(--secondary) / 0.3)' : 'hsl(var(--destructive))'}`,
+                color: 'white',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.8rem',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {!sessionStatus.notebooklm && <div className="pulse" style={{ background: 'white' }} />}
+              <span>{sessionStatus.notebooklm ? '✅' : '🔐'}</span>
+              <span>{sessionStatus.notebooklm ? 'NotebookLM authorized' : 'NotebookLM Auth Required'}</span>
+            </button>
+
+            <button onClick={triggerRun} disabled={!!runningStatus} style={{ padding: '1rem 2.5rem', fontSize: '1rem', borderRadius: '16px', background: 'hsl(var(--accent))', color: 'white' }}>
               {runningStatus ? 'Processing...' : '▶ Start Routine'}
             </button>
           </div>

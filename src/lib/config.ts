@@ -8,6 +8,7 @@ const DEFAULT_CONFIG: AppConfig = {
     youtube_whitelist: [],
     bilibili_whitelist: [],
     rss_feeds: [],
+    chrome_exe_path: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     hn_config: {
         keywords: ['AI', 'LLM', 'Machine Learning', 'OpenAI', 'Anthropic'],
         minPoints: 100,

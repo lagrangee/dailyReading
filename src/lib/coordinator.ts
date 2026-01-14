@@ -9,6 +9,7 @@ export interface AppConfig {
     youtube_whitelist: string[];
     bilibili_whitelist: string[];
     rss_feeds: string[];
+    chrome_exe_path: string;
     hn_config: {
         keywords: string[];
         minPoints: number;
