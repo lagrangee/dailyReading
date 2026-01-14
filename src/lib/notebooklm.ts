@@ -3,27 +3,32 @@ import { ScrapedLink } from './scrapers/base';
 import path from 'path';
 
 export class NotebookLMClient {
-    private browser: Browser | null = null;
     private context: BrowserContext | null = null;
 
-    async init(storageStatePath?: string) {
-        console.log('[NotebookLM] Launching browser...');
+    async init() {
+        console.log('[NotebookLM] Launching persistent browser context...');
 
-        // 默认使用项目中的 storage state 文件
-        const storagePath = storageStatePath || path.join(process.cwd(), '.sessions', 'notebooklm_storage.json');
+        // 使用持久化配置目录，而不是 JSON 文件
+        const profilePath = path.join(process.cwd(), '.sessions', 'notebooklm_profile');
 
-        this.browser = await chromium.launch({
+        this.context = await chromium.launchPersistentContext(profilePath, {
+            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
             headless: false,
-            args: ['--disable-blink-features=AutomationControlled'],
+            viewport: null,
+            // 彻底屏蔽所有 Playwright 默认附带的、具有“机器人”特征的参数
+            ignoreDefaultArgs: [
+                '--enable-automation',
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--use-mock-keychain'
+            ],
+            args: [
+                '--disable-blink-features=AutomationControlled',
+                '--window-size=1280,800'
+            ],
         });
 
-        // 使用 storageState 加载已保存的登录状态
-        this.context = await this.browser.newContext({
-            storageState: storagePath,
-            viewport: { width: 1280, height: 800 },
-        });
-
-        console.log(`[NotebookLM] Loaded session from: ${storagePath}`);
+        console.log(`[NotebookLM] Using persistent profile at: ${profilePath}`);
     }
 
     async createDailyNotebook(notebookName: string): Promise<Page> {
@@ -186,8 +191,7 @@ export class NotebookLMClient {
     }
 
     async close() {
-        console.log('[NotebookLM] Closing browser...');
+        console.log('[NotebookLM] Closing persistent context...');
         if (this.context) await this.context.close();
-        if (this.browser) await this.browser.close();
     }
 }
