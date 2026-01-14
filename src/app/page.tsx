@@ -143,33 +143,35 @@ export default function Home() {
         </div>
 
         <nav>
-          <TagInput label="YouTube" icon="📺" tags={config.youtube_whitelist} placeholder="Add Handle..." onTagsChange={(tags) => setConfig({ ...config, youtube_whitelist: tags })} />
-          <TagInput label="Bilibili" icon="🎬" tags={config.bilibili_whitelist} placeholder="Add UP ID..." onTagsChange={(tags) => setConfig({ ...config, bilibili_whitelist: tags })} />
-          <TagInput label="RSS Feeds" icon="🎙️" tags={config.rss_feeds} placeholder="Add XML URL..." onTagsChange={(tags) => setConfig({ ...config, rss_feeds: tags })} />
+          <TagInput
+            label="YouTube"
+            icon="📺"
+            tags={config.platforms.youtube?.whitelist || []}
+            placeholder="Add Handle..."
+            onTagsChange={(tags) => setConfig({
+              ...config,
+              platforms: { ...config.platforms, youtube: { whitelist: tags } }
+            })}
+          />
+          <TagInput
+            label="Bilibili"
+            icon="🎬"
+            tags={config.platforms.bilibili?.whitelist || []}
+            placeholder="Add UP ID..."
+            onTagsChange={(tags) => setConfig({
+              ...config,
+              platforms: { ...config.platforms, bilibili: { whitelist: tags } }
+            })}
+          />
+          <TagInput
+            label="RSS Feeds"
+            icon="🎙️"
+            tags={config.rss_feeds}
+            placeholder="Add XML URL..."
+            onTagsChange={(tags) => setConfig({ ...config, rss_feeds: tags })}
+          />
 
-          <div className="section" style={{ marginBottom: '2.5rem' }}>
-            <div className="section-title" style={{ fontSize: '0.9rem', opacity: 0.6, textTransform: 'uppercase', marginBottom: '1rem' }}>
-              <span>📰</span> <span style={{ marginLeft: '0.5rem' }}>Hacker News</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <input
-                value={config.hn_config.keywords.join(', ')}
-                onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, keywords: e.target.value.split(',').map(k => k.trim()) } })}
-                placeholder="Keywords (AI, LLM...)"
-                style={{ fontSize: '0.85rem' }}
-              />
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '0.7rem', opacity: 0.4, display: 'block', marginBottom: '0.3rem' }}>Min Points</label>
-                  <input type="number" value={config.hn_config.minPoints} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, minPoints: parseInt(e.target.value) } })} style={{ fontSize: '0.85rem' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '0.7rem', opacity: 0.4, display: 'block', marginBottom: '0.3rem' }}>Max Results</label>
-                  <input type="number" value={config.hn_config.maxResults} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, maxResults: parseInt(e.target.value) } })} style={{ fontSize: '0.85rem' }} />
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Hacker News 已移除硬编码，建议使用 RSS */}
 
           <div className="section" style={{ marginBottom: '2.5rem' }}>
             <div className="section-title" style={{ fontSize: '0.9rem', opacity: 0.6, textTransform: 'uppercase', marginBottom: '1rem' }}>

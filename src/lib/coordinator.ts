@@ -1,49 +1,58 @@
 import { YouTubeScraper } from './scrapers/youtube';
 import { BilibiliScraper } from './scrapers/bilibili';
 import { RSSScraper } from './scrapers/rss';
-import { HackerNewsScraper } from './scrapers/hn';
-import { ScrapedLink } from './scrapers/base';
+import { BaseScraper, ScrapedLink } from './scrapers/base';
 import { readHistory } from './history';
 
 export interface AppConfig {
-    youtube_whitelist: string[];
-    bilibili_whitelist: string[];
+    platforms: {
+        youtube?: { whitelist: string[] };
+        bilibili?: { whitelist: string[] };
+        [key: string]: any;
+    };
     rss_feeds: string[];
     chrome_exe_path: string;
-    hn_config: {
-        keywords: string[];
-        minPoints: number;
-        maxResults: number;
-    };
 }
 
 export class ScrapeCoordinator {
     private youtube = new YouTubeScraper();
     private bilibili = new BilibiliScraper();
     private rss = new RSSScraper();
-    private hn = new HackerNewsScraper();
 
     async scrapeAll(config: AppConfig, onProgress?: (msg: string) => void): Promise<ScrapedLink[]> {
-        if (onProgress) onProgress('Starting YouTube scrape...');
-        const youtubeLinks = await this.youtube.scrape(config.youtube_whitelist);
+        const allResults: ScrapedLink[] = [];
 
-        if (onProgress) onProgress('Starting Bilibili scrape...');
-        const bilibiliLinks = await this.bilibili.scrape(config.bilibili_whitelist);
+        // 1. 处理平台类来源
+        const platformMap: Record<string, BaseScraper> = {
+            youtube: this.youtube,
+            bilibili: this.bilibili
+        };
 
-        if (onProgress) onProgress('Starting RSS scrape...');
-        const rssLinks = await this.rss.scrape(config.rss_feeds);
+        for (const [platformId, scraper] of Object.entries(platformMap)) {
+            const platformConfig = config.platforms?.[platformId];
+            if (platformConfig && platformConfig.whitelist && platformConfig.whitelist.length > 0) {
+                if (onProgress) onProgress(`Starting ${scraper.platformName} scrape...`);
+                try {
+                    const links = await scraper.scrape(platformConfig.whitelist);
+                    allResults.push(...links);
+                } catch (error) {
+                    console.error(`${scraper.platformName} scrape error:`, error);
+                }
+            }
+        }
 
-        if (onProgress) onProgress('Starting HN scrape...');
-        const hnLinks = await this.hn.scrape(config.hn_config);
-
-        const flatResults = [
-            ...youtubeLinks,
-            ...bilibiliLinks,
-            ...rssLinks,
-            ...hnLinks
-        ];
+        // 2. 处理 RSS 类来源
+        if (config.rss_feeds && config.rss_feeds.length > 0) {
+            if (onProgress) onProgress('Starting RSS scrape...');
+            try {
+                const rssLinks = await this.rss.scrape(config.rss_feeds);
+                allResults.push(...rssLinks);
+            } catch (error) {
+                console.error('RSS scrape error:', error);
+            }
+        }
 
         const history = await readHistory();
-        return flatResults.filter(link => !history.includes(link.url));
+        return allResults.filter(link => !history.includes(link.url));
     }
 }
