@@ -1,16 +1,17 @@
 {
-  "name": "tmp-app",
+  "name": "daily-reading",
   "version": "0.1.0",
+  "description": "Multi-source scraper and AI automated sync to NotebookLM",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "run-sync": "npx tsx src/lib/main.ts"
   },
   "dependencies": {
     "next": "16.1.1",
-    "node-cron": "^4.2.1",
     "playwright": "^1.57.0",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",

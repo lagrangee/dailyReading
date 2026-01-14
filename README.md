@@ -28,7 +28,8 @@ This project provides a full-featured visual dashboard, eliminating the need to 
 ```bash
 npm install
 npx playwright install chromium
-npm run dev
+npm run dev # Launch dashboard
+npm run run-sync # Run sync task only (CLI mode)
 ```
 Access [http://localhost:3000](http://localhost:3000) to enter the dashboard.
 
@@ -46,7 +47,7 @@ Access [http://localhost:3000](http://localhost:3000) to enter the dashboard.
 
 - **Dependency Installation**: Windows users also need to run `npx playwright install chromium` for basic scrapers.
 - **Path Format**: When configuring the path in the UI, Windows users should directly paste the full path of the `.exe` file.
-- **Automated Execution**: macOS users can use the project's `.plist` with LaunchAgents. Windows users are recommended to use the **"Task Scheduler"**, creating a task to trigger the background command periodically.
+- **Automated Execution**: macOS users can use the `.plist` file in the `deploy/` directory with LaunchAgents. Windows users are recommended to use the **"Task Scheduler"**, creating a task to trigger the background command periodically.
 
 ## 📂 Project Structure
 

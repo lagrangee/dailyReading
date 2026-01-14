@@ -1,0 +1,20 @@
+{
+    "youtube_whitelist": [
+        "@YouTubeHandle"
+    ],
+    "bilibili_whitelist": [
+        "123456"
+    ],
+    "rss_feeds": [
+        "https://example.com/rss.xml"
+    ],
+    "chrome_exe_path": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "hn_config": {
+        "keywords": [
+            "AI",
+            "LLM"
+        ],
+        "minPoints": 100,
+        "maxResults": 3
+    }
+}

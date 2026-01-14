@@ -90,3 +90,12 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void) {
         console.log('[Main] Task finished. Browser stays open.');
     }
 }
+
+// 支持直接作为脚本运行
+if (require.main === module || (typeof process !== 'undefined' && process.argv[1]?.includes('main.ts'))) {
+    console.log('[Main] Starting daily routine from CLI...');
+    runDailyRoutine().catch(err => {
+        console.error('[Main] Fatal error:', err);
+        process.exit(1);
+    });
+}
