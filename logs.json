@@ -1,5 +1,247 @@
 [
   {
+    "id": "32cff062-051e-41d5-8b64-6313d8c2fb6a",
+    "timestamp": "1/14/2026, 1:37:55 PM",
+    "status": "success",
+    "message": "Successfully synced 6 items to NotebookLM.",
+    "linksScraped": 6,
+    "notebookSyncStatus": "success",
+    "details": [
+      {
+        "title": "It's Time To Build",
+        "url": "https://www.youtube.com/watch?v=M9VKnPMs6Rw",
+        "source": "YouTube"
+      },
+      {
+        "title": "Paul Rosolie: Uncontacted Tribes in the Amazon Jungle | Lex Fridman Podcast #489",
+        "url": "https://www.youtube.com/watch?v=Z-FRe5AKmCU",
+        "source": "YouTube"
+      },
+      {
+        "title": "机器人“大脑”60年进化史：基础模型的五代进化与三大闭源流派｜机器人系列",
+        "url": "https://www.youtube.com/watch?v=g5hw1HZfwTc",
+        "source": "YouTube"
+      },
+      {
+        "title": "14:25\n马斯克旗下 AI 聊天机器人 Grok 将接入五角大楼系统\n美国国防部长赫格塞思表示，美国企业家马斯克旗下的人工智能（AI）聊天机器人“格罗克”（Grok）将被引入五角大楼网络，与谷歌的生",
+        "url": "https://www.bilibili.com/video/BV1cYrJBoEje/",
+        "source": "Bilibili"
+      },
+      {
+        "title": "AI generated music barred from Bandcamp",
+        "url": "https://old.reddit.com/r/BandCamp/comments/1qbw8ba/ai_generated_music_on_bandcamp/",
+        "source": "Hacker News"
+      },
+      {
+        "title": "We can't have nice things because of AI scrapers",
+        "url": "https://blog.metabrainz.org/2025/12/11/we-cant-have-nice-things-because-of-ai-scrapers/",
+        "source": "Hacker News"
+      }
+    ],
+    "notebookUrl": "https://notebooklm.google.com/notebook/09fbdcf4-ea6b-4e59-b883-6ae92ce3b282"
+  },
+  {
+    "id": "0a35f0ef-f754-4867-9bf1-7ca4794fdfe5",
+    "timestamp": "1/14/2026, 1:32:28 PM",
+    "status": "success",
+    "message": "Successfully synced 6 items to NotebookLM.",
+    "linksScraped": 6,
+    "notebookSyncStatus": "success",
+    "details": [
+      {
+        "title": "It's Time To Build",
+        "url": "https://www.youtube.com/watch?v=M9VKnPMs6Rw",
+        "source": "YouTube"
+      },
+      {
+        "title": "Paul Rosolie: Uncontacted Tribes in the Amazon Jungle | Lex Fridman Podcast #489",
+        "url": "https://www.youtube.com/watch?v=Z-FRe5AKmCU",
+        "source": "YouTube"
+      },
+      {
+        "title": "机器人“大脑”60年进化史：基础模型的五代进化与三大闭源流派｜机器人系列",
+        "url": "https://www.youtube.com/watch?v=g5hw1HZfwTc",
+        "source": "YouTube"
+      },
+      {
+        "title": "14:25\n马斯克旗下 AI 聊天机器人 Grok 将接入五角大楼系统\n美国国防部长赫格塞思表示，美国企业家马斯克旗下的人工智能（AI）聊天机器人“格罗克”（Grok）将被引入五角大楼网络，与谷歌的生",
+        "url": "https://www.bilibili.com/video/BV1cYrJBoEje/",
+        "source": "Bilibili"
+      },
+      {
+        "title": "AI generated music barred from Bandcamp",
+        "url": "https://old.reddit.com/r/BandCamp/comments/1qbw8ba/ai_generated_music_on_bandcamp/",
+        "source": "Hacker News"
+      },
+      {
+        "title": "We can't have nice things because of AI scrapers",
+        "url": "https://blog.metabrainz.org/2025/12/11/we-cant-have-nice-things-because-of-ai-scrapers/",
+        "source": "Hacker News"
+      }
+    ],
+    "notebookUrl": "https://notebooklm.google.com/notebook/8aaecd77-8071-44d8-a186-f2043f926cf8"
+  },
+  {
+    "id": "3f0f4ca7-2878-4aa3-9222-06337950eaa4",
+    "timestamp": "1/14/2026, 1:30:54 PM",
+    "status": "success",
+    "message": "Scraped 6 items. NotebookLM sync pending...",
+    "linksScraped": 6,
+    "notebookSyncStatus": "failed",
+    "details": [
+      {
+        "title": "It's Time To Build",
+        "url": "https://www.youtube.com/watch?v=M9VKnPMs6Rw",
+        "source": "YouTube"
+      },
+      {
+        "title": "Paul Rosolie: Uncontacted Tribes in the Amazon Jungle | Lex Fridman Podcast #489",
+        "url": "https://www.youtube.com/watch?v=Z-FRe5AKmCU",
+        "source": "YouTube"
+      },
+      {
+        "title": "机器人“大脑”60年进化史：基础模型的五代进化与三大闭源流派｜机器人系列",
+        "url": "https://www.youtube.com/watch?v=g5hw1HZfwTc",
+        "source": "YouTube"
+      },
+      {
+        "title": "14:25\n马斯克旗下 AI 聊天机器人 Grok 将接入五角大楼系统\n美国国防部长赫格塞思表示，美国企业家马斯克旗下的人工智能（AI）聊天机器人“格罗克”（Grok）将被引入五角大楼网络，与谷歌的生",
+        "url": "https://www.bilibili.com/video/BV1cYrJBoEje/",
+        "source": "Bilibili"
+      },
+      {
+        "title": "AI generated music barred from Bandcamp",
+        "url": "https://old.reddit.com/r/BandCamp/comments/1qbw8ba/ai_generated_music_on_bandcamp/",
+        "source": "Hacker News"
+      },
+      {
+        "title": "We can't have nice things because of AI scrapers",
+        "url": "https://blog.metabrainz.org/2025/12/11/we-cant-have-nice-things-because-of-ai-scrapers/",
+        "source": "Hacker News"
+      }
+    ],
+    "notebookSyncError": "Session expired. Please update NotebookLM session."
+  },
+  {
+    "id": "77cce2e2-da26-4504-896b-e0ea246ac786",
+    "timestamp": "1/14/2026, 1:30:24 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0,
+    "notebookSyncStatus": "pending"
+  },
+  {
+    "id": "e66fab29-6f8b-419e-a0fe-b2ad7632a012",
+    "timestamp": "1/14/2026, 1:18:38 PM",
+    "status": "success",
+    "message": "Successfully synced 6 items to NotebookLM.",
+    "linksScraped": 6,
+    "notebookSyncStatus": "success",
+    "details": [
+      {
+        "title": "It's Time To Build",
+        "url": "https://www.youtube.com/watch?v=M9VKnPMs6Rw",
+        "source": "YouTube"
+      },
+      {
+        "title": "Paul Rosolie: Uncontacted Tribes in the Amazon Jungle | Lex Fridman Podcast #489",
+        "url": "https://www.youtube.com/watch?v=Z-FRe5AKmCU",
+        "source": "YouTube"
+      },
+      {
+        "title": "机器人“大脑”60年进化史：基础模型的五代进化与三大闭源流派｜机器人系列",
+        "url": "https://www.youtube.com/watch?v=g5hw1HZfwTc",
+        "source": "YouTube"
+      },
+      {
+        "title": "14:25\n马斯克旗下 AI 聊天机器人 Grok 将接入五角大楼系统\n美国国防部长赫格塞思表示，美国企业家马斯克旗下的人工智能（AI）聊天机器人“格罗克”（Grok）将被引入五角大楼网络，与谷歌的生",
+        "url": "https://www.bilibili.com/video/BV1cYrJBoEje/",
+        "source": "Bilibili"
+      },
+      {
+        "title": "AI generated music barred from Bandcamp",
+        "url": "https://old.reddit.com/r/BandCamp/comments/1qbw8ba/ai_generated_music_on_bandcamp/",
+        "source": "Hacker News"
+      },
+      {
+        "title": "We can't have nice things because of AI scrapers",
+        "url": "https://blog.metabrainz.org/2025/12/11/we-cant-have-nice-things-because-of-ai-scrapers/",
+        "source": "Hacker News"
+      }
+    ],
+    "notebookUrl": "https://notebooklm.google.com/notebook/69d23376-2431-44c5-b4a4-8c777b456c7a"
+  },
+  {
+    "id": "14423b07-402a-4320-b4c8-a5db4c58d1fd",
+    "timestamp": "1/14/2026, 1:17:52 PM",
+    "status": "none",
+    "message": "No new content to sync.",
+    "linksScraped": 0,
+    "notebookSyncStatus": "pending"
+  },
+  {
+    "id": "51105260-1ebc-49d0-b6ae-420ecc081b6e",
+    "timestamp": "1/14/2026, 12:23:25 PM",
+    "status": "success",
+    "message": "Scraped 6 items. NotebookLM sync pending...",
+    "linksScraped": 6,
+    "notebookSyncStatus": "success",
+    "details": [
+      {
+        "title": "It's Time To Build",
+        "url": "https://www.youtube.com/watch?v=M9VKnPMs6Rw",
+        "source": "YouTube"
+      },
+      {
+        "title": "Paul Rosolie: Uncontacted Tribes in the Amazon Jungle | Lex Fridman Podcast #489",
+        "url": "https://www.youtube.com/watch?v=Z-FRe5AKmCU",
+        "source": "YouTube"
+      },
+      {
+        "title": "机器人“大脑”60年进化史：基础模型的五代进化与三大闭源流派｜机器人系列",
+        "url": "https://www.youtube.com/watch?v=g5hw1HZfwTc",
+        "source": "YouTube"
+      },
+      {
+        "title": "14:25\n马斯克旗下 AI 聊天机器人 Grok 将接入五角大楼系统\n美国国防部长赫格塞思表示，美国企业家马斯克旗下的人工智能（AI）聊天机器人“格罗克”（Grok）将被引入五角大楼网络，与谷歌的生",
+        "url": "https://www.bilibili.com/video/BV1cYrJBoEje/",
+        "source": "Bilibili"
+      },
+      {
+        "title": "AI generated music barred from Bandcamp",
+        "url": "https://old.reddit.com/r/BandCamp/comments/1qbw8ba/ai_generated_music_on_bandcamp/",
+        "source": "Hacker News"
+      },
+      {
+        "title": "We can't have nice things because of AI scrapers",
+        "url": "https://blog.metabrainz.org/2025/12/11/we-cant-have-nice-things-because-of-ai-scrapers/",
+        "source": "Hacker News"
+      }
+    ],
+    "notebookUrl": "https://notebooklm.google.com/notebook/5e0ddc17-8b3c-4adf-a02f-b137be1182ba"
+  },
+  {
+    "id": "6800e0cd-9396-4411-b145-135533e2e3f9",
+    "timestamp": "1/13/2026, 6:20:46 PM",
+    "status": "success",
+    "message": "Successfully synced 2 items to NotebookLM.",
+    "linksScraped": 2,
+    "notebookSyncStatus": "success",
+    "details": [
+      {
+        "title": "Infinity, Paradoxes, Gödel Incompleteness & the Mathematical Multiverse | Lex Fridman Podcast #488",
+        "url": "https://www.youtube.com/watch?v=14OPT6CcsH4&pp=ygULQGxleGZyaWRtYW7SBwkJTQoBhyohjO8%3D",
+        "source": "YouTube"
+      },
+      {
+        "title": "台積電仁武豪宅區全新五套房電梯車庫別墅-建商全新屋！",
+        "url": "https://www.youtube.com/watch?v=m7-K1TRUevg&pp=ygUNQFRoZVZhbGxleTEwMQ%3D%3D",
+        "source": "YouTube"
+      }
+    ],
+    "notebookUrl": "https://notebooklm.google.com/notebook/5c849fa6-b914-4119-8991-c55e74eb44d8"
+  },
+  {
     "id": "223e33e5-41db-4bf6-9f02-6245bcb93e98",
     "timestamp": "1/13/2026, 12:38:38 PM",
     "status": "success",

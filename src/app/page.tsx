@@ -26,20 +26,31 @@ function TagInput({ label, icon, tags, placeholder, onTagsChange }: TagInputProp
     if (e.key === 'Enter') { e.preventDefault(); addTag(); }
   };
   return (
-    <section className="glass" style={{ padding: '2rem' }}>
-      <div className="section-header">
-        <div className="section-title"><span>{icon}</span><span>{label}</span></div>
+    <div className="section" style={{ marginBottom: '2.5rem' }}>
+      <div className="section-header" style={{ marginBottom: '1rem' }}>
+        <div className="section-title" style={{ fontSize: '0.9rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span>{icon}</span> <span style={{ marginLeft: '0.5rem' }}>{label}</span>
+        </div>
       </div>
       <div className="tag-list">
         {tags.map((tag, idx) => (
-          <div key={idx} className="tag">{tag}<span className="tag-delete" onClick={() => removeTag(idx)}>&times;</span></div>
+          <div key={idx} className="tag">
+            {tag}
+            <span className="tag-delete" onClick={() => removeTag(idx)}>&times;</span>
+          </div>
         ))}
       </div>
-      <div className="input-row">
-        <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} />
-        <button onClick={addTag} style={{ background: 'var(--secondary)' }}>Add</button>
+      <div className="input-row" style={{ marginTop: '0.5rem' }}>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          style={{ fontSize: '0.85rem', padding: '0.6rem 0.8rem' }}
+        />
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -81,159 +92,170 @@ export default function Home() {
   };
 
   const triggerLogin = async (platform: 'bilibili' | 'youtube' | 'notebooklm') => {
-    alert(`A browser window will open for ${platform} login. Close the window after you finish logging in.`);
+    const ok = confirm(`A browser window will open for ${platform} login. Close the window after you finish logging in. Proceed?`);
+    if (!ok) return;
+
     await fetch('/api/login', {
       method: 'POST',
       body: JSON.stringify({ platform }),
       headers: { 'Content-Type': 'application/json' }
     });
-    alert(`${platform} session saved!`);
   };
 
-  if (loading || !config) return <div className="container" style={{ textAlign: 'center', marginTop: '10rem' }}>Loading Dashboard...</div>;
+  if (loading || !config) return <div style={{ display: 'grid', placeItems: 'center', height: '100vh', fontSize: '1.2rem', opacity: 0.5 }}>Loading Workspace...</div>;
 
   return (
-    <main className="container">
-      <header style={{ marginBottom: '3.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 className="gradient-text" style={{ fontSize: '3rem', fontWeight: '800' }}>Daily Reading</h1>
-          <p style={{ opacity: 0.6 }}>Real-time Intelligence Automation.</p>
+    <div className="layout-wrapper">
+      {/* 侧边栏：配置与管理 */}
+      <aside className="sidebar">
+        <div style={{ marginBottom: '3rem' }}>
+          <h1 className="gradient-text" style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Antigravity</h1>
+          <p style={{ fontSize: '0.8rem', opacity: 0.4 }}>Real-time Intelligence Hub</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          {runningStatus && (
-            <div className="glass" style={{ padding: '0.8rem 1.5rem', borderColor: 'var(--secondary)', color: 'var(--secondary)', fontWeight: 'bold' }}>
-              <span className="pulse" style={{ marginRight: '0.8rem' }}>●</span>
-              {runningStatus}
+
+        <nav>
+          <TagInput label="YouTube" icon="📺" tags={config.youtube_whitelist} placeholder="Add Handle..." onTagsChange={(tags) => setConfig({ ...config, youtube_whitelist: tags })} />
+          <TagInput label="Bilibili" icon="🎬" tags={config.bilibili_whitelist} placeholder="Add UP ID..." onTagsChange={(tags) => setConfig({ ...config, bilibili_whitelist: tags })} />
+          <TagInput label="RSS Feeds" icon="🎙️" tags={config.rss_feeds} placeholder="Add XML URL..." onTagsChange={(tags) => setConfig({ ...config, rss_feeds: tags })} />
+
+          <div className="section" style={{ marginBottom: '2.5rem' }}>
+            <div className="section-title" style={{ fontSize: '0.9rem', opacity: 0.6, textTransform: 'uppercase', marginBottom: '1rem' }}>
+              <span>📰</span> <span style={{ marginLeft: '0.5rem' }}>Hacker News</span>
             </div>
-          )}
-          <button onClick={triggerRun} disabled={!!runningStatus} style={{ background: 'var(--accent)', fontWeight: '600', padding: '1rem 2rem', borderRadius: '14px', opacity: runningStatus ? 0.5 : 1 }}>
-            {runningStatus ? 'Working...' : '▶ Start Sync'}
-          </button>
-        </div>
-      </header>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
-        <TagInput label="YouTube" icon="📺" tags={config.youtube_whitelist} placeholder="Handle (e.g. @a16z) or Name" onTagsChange={(tags) => setConfig({ ...config, youtube_whitelist: tags })} />
-        <TagInput label="Bilibili" icon="🎬" tags={config.bilibili_whitelist} placeholder="UP MID (ID numbers, e.g. 11017)" onTagsChange={(tags) => setConfig({ ...config, bilibili_whitelist: tags })} />
-        <TagInput label="RSS & Podcasts" icon="🎙️" tags={config.rss_feeds} placeholder="Feed URL" onTagsChange={(tags) => setConfig({ ...config, rss_feeds: tags })} />
-
-        <section className="glass" style={{ padding: '2rem' }}>
-          <div className="section-header"><div className="section-title"><span>📰</span><span>HN Filter</span></div></div>
-          <input value={config.hn_config.keywords.join(', ')} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, keywords: e.target.value.split(',').map(k => k.trim()) } })} placeholder="Keywords" />
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <input type="number" value={config.hn_config.minPoints} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, minPoints: parseInt(e.target.value) } })} />
-            <input type="number" value={config.hn_config.maxResults} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, maxResults: parseInt(e.target.value) } })} />
-          </div>
-        </section>
-      </div>
-
-      {/* Manual Login Section */}
-      <section className="glass" style={{ marginTop: '2rem', padding: '2rem' }}>
-        <h2 style={{ marginBottom: '1rem', opacity: 0.8 }}>🔐 Session Management</h2>
-        <p style={{ opacity: 0.5, marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-          If scraping fails due to login requirements, click a button below to open a browser window for manual login.
-          Your session will be saved and reused automatically.
-        </p>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <button onClick={() => triggerLogin('bilibili')} style={{ background: '#00a1d6', padding: '0.8rem 1.5rem', borderRadius: '12px' }}>
-            🎬 Login to Bilibili
-          </button>
-          <button onClick={() => triggerLogin('youtube')} style={{ background: '#ff0000', padding: '0.8rem 1.5rem', borderRadius: '12px' }}>
-            📺 Login to YouTube
-          </button>
-          <button onClick={() => triggerLogin('notebooklm')} style={{ background: '#4285f4', padding: '0.8rem 1.5rem', borderRadius: '12px' }}>
-            📓 Login to NotebookLM
-          </button>
-        </div>
-      </section>
-
-      {/* Logs Section */}
-      <section className="glass" style={{ marginTop: '2rem', padding: '2rem' }}>
-        <h2 style={{ marginBottom: '1.5rem', opacity: 0.8 }}>Recent Activity & Details</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {logs.map((log, i) => (
-            <div key={i} style={{ paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div>
-                  <span style={{
-                    color: log.status === 'success' ? 'var(--accent)' : '#ff4d4d',
-                    fontWeight: '800', marginRight: '1rem'
-                  }}>
-                    {log.status.toUpperCase()}
-                  </span>
-                  <span style={{ opacity: 0.5 }}>{log.timestamp}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <input
+                value={config.hn_config.keywords.join(', ')}
+                onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, keywords: e.target.value.split(',').map(k => k.trim()) } })}
+                placeholder="Keywords (AI, LLM...)"
+                style={{ fontSize: '0.85rem' }}
+              />
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.7rem', opacity: 0.4, display: 'block', marginBottom: '0.3rem' }}>Min Points</label>
+                  <input type="number" value={config.hn_config.minPoints} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, minPoints: parseInt(e.target.value) } })} style={{ fontSize: '0.85rem' }} />
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  {/* NotebookLM 同步状态 */}
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.7rem', opacity: 0.4, display: 'block', marginBottom: '0.3rem' }}>Max Results</label>
+                  <input type="number" value={config.hn_config.maxResults} onChange={(e) => setConfig({ ...config, hn_config: { ...config.hn_config, maxResults: parseInt(e.target.value) } })} style={{ fontSize: '0.85rem' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+          <button
+            onClick={() => fetch('/api/config', { method: 'POST', body: JSON.stringify(config) }).then(() => alert('Configuration Applied'))}
+            style={{ width: '100%', justifyContent: 'center', marginBottom: '1rem' }}
+          >
+            💾 Save Config
+          </button>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => triggerLogin('youtube')} style={{ flex: 1, padding: '0.6rem', fontSize: '1.2rem', justifyContent: 'center', background: '#ff000022', border: '1px solid #ff000044' }} title="Login YouTube">📺</button>
+            <button onClick={() => triggerLogin('bilibili')} style={{ flex: 1, padding: '0.6rem', fontSize: '1.2rem', justifyContent: 'center', background: '#00a1d622', border: '1px solid #00a1d644' }} title="Login Bilibili">🎬</button>
+            <button onClick={() => triggerLogin('notebooklm')} style={{ flex: 1, padding: '0.6rem', fontSize: '1.2rem', justifyContent: 'center', background: '#4285f422', border: '1px solid #4285f444' }} title="Login NotebookLM">📓</button>
+          </div>
+        </div>
+      </aside>
+
+      {/* 主内容区：活动流与状态 */}
+      <main className="main-content">
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
+          <div>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '800' }}>Intelligence Feed</h2>
+            <p style={{ opacity: 0.4 }}>Monitor your automated knowledge pipeline.</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            {runningStatus && (
+              <div className="glass" style={{ padding: '0.8rem 1.5rem', color: 'hsl(var(--secondary))', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                <div className="pulse" />
+                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{runningStatus}</span>
+              </div>
+            )}
+            <button onClick={triggerRun} disabled={!!runningStatus} style={{ padding: '1rem 2.5rem', fontSize: '1rem', borderRadius: '16px' }}>
+              {runningStatus ? 'Processing...' : '▶ Start Routine'}
+            </button>
+          </div>
+        </header>
+
+        <section className="activity-feed" style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+          {logs.map((log, i) => (
+            <div key={i} className="log-entry">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '12px',
+                    background: log.status === 'success' ? 'hsl(var(--accent) / 0.2)' : 'hsl(var(--destructive) / 0.2)',
+                    display: 'grid', placeItems: 'center', color: log.status === 'success' ? 'hsl(var(--accent))' : 'hsl(var(--destructive))'
+                  }}>
+                    {log.status === 'success' ? '✓' : '!'}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{log.message}</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.3 }}>{log.timestamp}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.8rem' }}>
                   {log.notebookSyncStatus === 'success' && (
-                    <span style={{ color: 'var(--accent)', fontSize: '0.85rem' }}>✓ Synced</span>
-                  )}
-                  {log.notebookSyncStatus === 'failed' && (
-                    <span style={{ color: '#ff4d4d', fontSize: '0.85rem' }}>✗ Failed</span>
-                  )}
-                  {/* 手动 Sync 按钮始终显示（只要有内容） */}
-                  {log.details && log.details.length > 0 && (
-                    <button
-                      onClick={async () => {
-                        const res = await fetch('/api/sync', {
-                          method: 'POST',
-                          body: JSON.stringify({ logId: log.id }),
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        // 不弹窗，直接刷新数据显示状态变化
-                        fetchData();
-                      }}
-                      style={{
-                        background: log.notebookSyncStatus === 'failed' ? '#ff4d4d' : 'var(--secondary)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem'
-                      }}
-                    >
-                      📓 {log.notebookSyncStatus === 'failed' ? 'Retry Sync' : 'Sync to NotebookLM'}
-                    </button>
+                    <div className="tag" style={{ background: 'hsl(var(--accent) / 0.1)', borderColor: 'hsl(var(--accent) / 0.3)', color: 'hsl(var(--accent))' }}>
+                      <span style={{ fontSize: '1rem' }}>📓</span> Synced
+                    </div>
                   )}
                   {log.notebookUrl && (
-                    <a href={log.notebookUrl} target="_blank" className="tag" style={{ background: 'var(--primary)', color: 'white', textDecoration: 'none' }}>
-                      Open NotebookLM ↗
+                    <a href={log.notebookUrl} target="_blank" rel="noreferrer" className="tag" style={{ textDecoration: 'none', background: 'hsl(var(--secondary) / 0.1)', borderColor: 'hsl(var(--secondary) / 0.3)', color: 'hsl(var(--secondary))' }}>
+                      Open Lab ↗
                     </a>
+                  )}
+                  {log.details && log.details.length > 0 && log.notebookSyncStatus !== 'success' && (
+                    <button
+                      onClick={async () => {
+                        await fetch('/api/sync', { method: 'POST', body: JSON.stringify({ logId: log.id }), headers: { 'Content-Type': 'application/json' } });
+                        fetchData();
+                      }}
+                      style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', background: 'hsl(var(--secondary) / 0.2)', color: 'hsl(var(--secondary))', border: '1px solid hsl(var(--secondary) / 0.3)' }}
+                    >
+                      Sync Now
+                    </button>
                   )}
                 </div>
               </div>
 
               {log.details && log.details.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.2rem', paddingLeft: '3.1rem' }}>
                   {log.details.map((detail, di) => (
-                    <a key={di} href={detail.url} target="_blank" className="glass" style={{
-                      padding: '0.8rem', fontSize: '0.85rem', color: 'inherit', textDecoration: 'none',
-                      display: 'flex', flexDirection: 'column', gap: '0.3rem'
+                    <a key={di} href={detail.url} target="_blank" rel="noreferrer" className="glass" style={{
+                      padding: '1.2rem', display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit'
                     }}>
-                      <div style={{ opacity: 0.4, fontSize: '0.7rem' }}>[{detail.source}]</div>
-                      <div style={{ fontWeight: '500' }}>{detail.title}</div>
+                      <div style={{
+                        flexShrink: 0, width: '48px', height: '48px', borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.05)', display: 'grid', placeItems: 'center', fontSize: '1.2rem'
+                      }}>
+                        {detail.source === 'YouTube' ? '🎬' : detail.source === 'Bilibili' ? '📺' : '📰'}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ opacity: 0.3, fontSize: '0.7rem', textTransform: 'uppercase', marginBottom: '0.2rem' }}>{detail.source}</div>
+                        <div style={{ fontWeight: '600', fontSize: '0.9rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {detail.title}
+                        </div>
+                      </div>
                     </a>
                   ))}
                 </div>
               )}
             </div>
           ))}
-        </div>
-      </section>
-
-      <footer style={{ marginTop: '3rem', display: 'flex', justifyContent: 'flex-end' }}>
-        <button onClick={() => fetch('/api/config', { method: 'POST', body: JSON.stringify(config) }).then(() => alert('Saved'))}
-          style={{ padding: '0.8rem 3rem', borderRadius: '16px', background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}>
-          Apply Configuration
-        </button>
-      </footer>
+        </section>
+      </main>
 
       <style jsx>{`
-        .pulse { animation: pulse-animation 2s infinite; }
-        @keyframes pulse-animation {
-          0% { opacity: 1; }
-          50% { opacity: 0.3; }
-          100% { opacity: 1; }
+        .log-entry:not(:last-child) {
+          margin-bottom: 2rem;
+          padding-bottom: 3rem;
+          border-bottom: 1px solid hsl(var(--border) / 0.5);
         }
       `}</style>
-    </main>
+    </div>
   );
 }

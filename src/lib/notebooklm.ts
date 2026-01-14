@@ -69,12 +69,15 @@ export class NotebookLMClient {
             // 点击"新建笔记本"
             await page.locator('mat-card').filter({ hasText: '新建笔记本' }).click();
 
-            // 等待页面导航完成
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(2000);
+            // 等待页面跳转并出现“关闭对话框”按钮（表示页面已加载且弹窗已出现）
+            const closeButton = page.getByRole('button', { name: '关闭对话框' });
+            try {
+                await closeButton.waitFor({ state: 'visible', timeout: 15000 });
+            } catch (e) {
+                console.log('[NotebookLM] Close button didn\'t appear in time, checking URL...');
+            }
 
             // 关闭默认弹出的"添加内容源"弹窗
-            const closeButton = page.getByRole('button', { name: '关闭对话框' });
             if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
                 await closeButton.click();
                 await page.waitForTimeout(500);
@@ -166,6 +169,20 @@ export class NotebookLMClient {
 
         await page.getByRole('button', { name: '插入' }).click();
         await page.waitForTimeout(3000); // 批量添加可能需要更长时间
+    }
+
+    async askForSummary(page: Page) {
+        console.log('[NotebookLM] Asking for summary...');
+        try {
+            await page.getByRole('textbox', { name: '查询框' }).click();
+            await page.getByRole('textbox', { name: '查询框' }).fill('总结');
+            await page.locator('query-box').getByRole('button', { name: '提交' }).click();
+            console.log('[NotebookLM] Summary request submitted.');
+            // 等待一段时间让总结生成
+            await page.waitForTimeout(5000);
+        } catch (e) {
+            console.error('[NotebookLM] Failed to ask for summary:', e);
+        }
     }
 
     async close() {

@@ -1,5 +1,5 @@
-import { YouTubeScraper } from './src/lib/scrapers/youtube';
-import { BilibiliScraper } from './src/lib/scrapers/bilibili';
+import { YouTubeScraper } from '../src/lib/scrapers/youtube';
+import { BilibiliScraper } from '../src/lib/scrapers/bilibili';
 
 async function debug() {
     const yt = new YouTubeScraper();

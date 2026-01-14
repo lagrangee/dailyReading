@@ -61,6 +61,12 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void) {
 
         await client.addSources(page, links, onProgress);
 
+        if (onProgress) onProgress('Waiting for NotebookLM to process sources...');
+        await page.waitForTimeout(5000); // 给 NotebookLM 一些时间加载 source
+
+        if (onProgress) onProgress('Asking NotebookLM for summary...');
+        await client.askForSummary(page);
+
         // 更新日志：同步成功
         await updateLogById(logId, {
             message: `Successfully synced ${links.length} items to NotebookLM.`,
@@ -80,6 +86,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void) {
 
         if (onProgress) onProgress(`NotebookLM sync failed: ${error}`);
     } finally {
-        await client.close();
+        // 按照用户要求，不再自动关闭浏览器，方便直接查看结果
+        console.log('[Main] Task finished. Browser stays open.');
     }
 }

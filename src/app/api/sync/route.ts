@@ -43,7 +43,14 @@ export async function POST(req: NextRequest) {
 
         console.log(`[Sync API] Adding ${links.length} sources...`);
         await client.addSources(page, links);
-        console.log(`[Sync API] Sources added successfully`);
+
+        console.log('[Sync API] Waiting for sources to load...');
+        await page.waitForTimeout(5000);
+
+        console.log('[Sync API] Asking for summary...');
+        await client.askForSummary(page);
+
+        console.log(`[Sync API] Sources added and summary requested successfully`);
 
         await updateLogById(logId, {
             notebookUrl: notebookUrl,
