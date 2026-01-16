@@ -1,9 +1,14 @@
 export interface ScrapedLink {
   title: string;
   url: string;
-  author: string;
+  author: string;        // 频道名称
+  authorId?: string;     // 频道 ID（用于匹配配置中的 source）
+  authorAvatar?: string; // 频道头像 URL
   publishedAt: Date;
   source: string;
+  transcript?: string;
+  description?: string;
+  formattedContent?: string;
 }
 
 export abstract class BaseScraper {

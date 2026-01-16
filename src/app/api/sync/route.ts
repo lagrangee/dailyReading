@@ -42,7 +42,10 @@ export async function POST(req: NextRequest) {
         }));
 
         console.log(`[Sync API] Adding ${links.length} sources...`);
-        await client.addSources(page, links);
+        // 定义一个简单的进度发送器，或者如果有的话直接传递
+        await client.addSources(page, links, (msg) => {
+            console.log(`[Sync Progress] ${msg}`);
+        });
 
         console.log('[Sync API] Waiting for sources to load...');
         await page.waitForTimeout(5000);
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
         console.log(`[Sync API] Sources added and summary requested successfully`);
 
         await updateLogById(logId, {
+            message: `Successfully synced ${links.length} items to NotebookLM.`,
             notebookUrl: notebookUrl,
             notebookSyncStatus: 'success',
             notebookSyncError: undefined
@@ -72,6 +76,7 @@ export async function POST(req: NextRequest) {
         console.error(`[Sync API] Error:`, error);
 
         await updateLogById(logId, {
+            message: `Sync to NotebookLM failed: ${error instanceof Error ? error.message : String(error)}`,
             notebookSyncStatus: 'failed',
             notebookSyncError: error instanceof Error ? error.message : String(error)
         });

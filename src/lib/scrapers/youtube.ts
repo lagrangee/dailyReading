@@ -1,6 +1,4 @@
-import { chromium } from 'playwright';
 import { BaseScraper, ScrapedLink } from './base';
-import { getSessionDir } from '../session_manager';
 import Parser from 'rss-parser';
 import fs from 'fs/promises';
 import path from 'path';
@@ -8,10 +6,16 @@ import path from 'path';
 const parser = new Parser();
 const CACHE_FILE = path.join(process.cwd(), '.sessions', 'youtube_channels.json');
 
+// 缓存格式：{ channelId, avatar? }
+interface ChannelCache {
+    channelId: string;
+    avatar?: string;
+}
+
 export class YouTubeScraper extends BaseScraper {
     platformName = 'YouTube';
 
-    private async loadCache(): Promise<Record<string, string>> {
+    private async loadCache(): Promise<Record<string, ChannelCache | string>> {
         try {
             const data = await fs.readFile(CACHE_FILE, 'utf-8');
             return JSON.parse(data);
@@ -20,7 +24,7 @@ export class YouTubeScraper extends BaseScraper {
         }
     }
 
-    private async saveCache(cache: Record<string, string>) {
+    private async saveCache(cache: Record<string, ChannelCache | string>) {
         try {
             await fs.mkdir(path.dirname(CACHE_FILE), { recursive: true });
             await fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2));
@@ -29,125 +33,101 @@ export class YouTubeScraper extends BaseScraper {
         }
     }
 
+    // 兼容旧格式和新格式
+    private getChannelInfo(cacheEntry: ChannelCache | string): ChannelCache {
+        if (typeof cacheEntry === 'string') {
+            return { channelId: cacheEntry };
+        }
+        return cacheEntry;
+    }
+
+    /**
+     * 通过 HTTP 获取 Channel ID 和头像（无需 Playwright）
+     */
+    private async fetchChannelInfo(handle: string): Promise<ChannelCache | null> {
+        try {
+            console.log(`[YouTube] Fetching channel info for ${handle} via HTTP...`);
+            const res = await fetch(`https://www.youtube.com/${handle}`, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept-Language': 'en-US,en',
+                    'Cookie': 'CONSENT=YES+'
+                }
+            });
+
+            if (!res.ok) {
+                console.error(`[YouTube] HTTP error: ${res.status}`);
+                return null;
+            }
+
+            const html = await res.text();
+
+            // 提取 Channel ID
+            const channelIdMatch = html.match(/"channelId":"(UC[^"]+)"/) ||
+                html.match(/"externalId":"(UC[^"]+)"/);
+            if (!channelIdMatch) {
+                console.error(`[YouTube] Could not find Channel ID for ${handle}`);
+                return null;
+            }
+            const channelId = channelIdMatch[1];
+
+            // 提取头像 URL
+            const avatarMatch = html.match(/https:\/\/yt3\.googleusercontent\.com\/[^"]+/);
+            const avatar = avatarMatch ? avatarMatch[0] : undefined;
+
+            console.log(`[YouTube] Success! Found Channel ID: ${channelId}${avatar ? ' + avatar' : ''}`);
+            return { channelId, avatar };
+        } catch (e) {
+            console.error(`[YouTube] Failed to fetch channel info for ${handle}:`, e);
+            return null;
+        }
+    }
+
     async scrape(whitelist: string[]): Promise<ScrapedLink[]> {
         const cache = await this.loadCache();
         const results: ScrapedLink[] = [];
-        let browserContext: any = null;
+        let cacheUpdated = false;
 
         for (const name of whitelist) {
             const cleanName = name.trim();
             const handle = cleanName.startsWith('@') ? cleanName : `@${cleanName}`;
 
-            let channelId = cache[handle];
+            let channelInfo = cache[handle] ? this.getChannelInfo(cache[handle]) : null;
 
-            // 如果没有缓存，通过 Playwright 抓取 Channel ID
-            if (!channelId) {
-                console.log(`[YouTube] Searching for Channel ID for ${handle}`);
-                let browser: any = null;
-
-                try {
-                    console.log(`[YouTube] Launching browser for ${handle}`);
-                    browser = await chromium.launch({
-                        headless: true, // 仍然保持无头以防环境不支持有头，但增加更多规避手段
-                        args: [
-                            '--disable-blink-features=AutomationControlled',
-                            '--disable-features=IsolateOrigins,site-per-process',
-                        ],
-                    });
-
-                    const context = await browser.newContext({
-                        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-                    });
-
-                    // 预设 Cookie 尝试规避 Consent 页面
-                    await context.addCookies([{
-                        name: 'CONSENT',
-                        value: 'YES+cb.20240117-07-p0.de+FX+999',
-                        domain: '.youtube.com',
-                        path: '/'
-                    }]);
-
-                    const page = await context.newPage();
-                    // 隐藏 webdriver
-                    await page.addInitScript(() => {
-                        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                    });
-
-                    const response = await page.goto(`https://www.youtube.com/${handle}`, {
-                        waitUntil: 'domcontentloaded',
-                        timeout: 60000
-                    });
-
-                    // 处理可能出现的 Consent 页面
-                    if (page.url().includes('consent.youtube.com')) {
-                        console.log(`[YouTube] Consent page detected, attempting to accept...`);
-                        // 寻找 "Alle akzeptieren" 按钮 (德语环境常见) 或 "Accept all" 
-                        const acceptBtn = page.locator('button:has-text("Alle akzeptieren"), button:has-text("Accept all"), button:has-text("I agree")').first();
-                        if (await acceptBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-                            await acceptBtn.click();
-                            console.log(`[YouTube] Consent accepted, waiting for navigation...`);
-                            await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
-                        } else {
-                            console.log(`[YouTube] Consent button not found, trying to submit form...`);
-                            await page.locator('form[action*="consent.youtube.com"] button').last().click().catch(() => { });
-                            await page.waitForTimeout(3000);
-                        }
-                    }
-
-                    // Add a small buffer for critical meta tags to load
-                    await page.waitForTimeout(2000);
-
-                    // 1. 显式等待 meta 标签出现
-                    channelId = await page.locator('meta[itemprop="identifier"]').getAttribute('content', { timeout: 10000 }).catch(() => null);
-
-                    if (!channelId) {
-                        console.log(`[YouTube] Itemprop identifier not found, checking channelId meta...`);
-                        channelId = await page.locator('meta[itemprop="channelId"]').getAttribute('content', { timeout: 2000 }).catch(() => null);
-                    }
-
-                    // 2. 如果页面渲染有问题，尝试直接从初始 HTML 字符串中匹配
-                    if (!channelId) {
-                        const html = await page.content();
-                        const metaMatch = html.match(/<meta[^>]*itemprop="identifier"[^>]*content="(UC[^"]*)"/) ||
-                            html.match(/<meta[^>]*content="(UC[^"]*)"[^>]*itemprop="identifier"/) ||
-                            html.match(/"(?:externalId|browseId)":"(UC[a-zA-Z0-9_-]+)"/);
-                        if (metaMatch) {
-                            channelId = metaMatch[1];
-                        }
-                    }
-
-                    if (channelId) {
-                        console.log(`[YouTube] Success! Found Channel ID for ${handle}: ${channelId}`);
-                        cache[handle] = channelId;
-                        await this.saveCache(cache);
-                    } else {
-                        console.error(`[YouTube] Could not find Channel ID for ${handle} via any method`);
-                    }
-                } catch (e) {
-                    console.error(`[YouTube] Browser task failed for ${handle}:`, e);
-                } finally {
-                    if (browser) {
-                        await browser.close().catch(() => { });
-                    }
+            // 如果没有缓存，通过 HTTP 获取 Channel ID 和头像
+            if (!channelInfo?.channelId) {
+                channelInfo = await this.fetchChannelInfo(handle);
+                if (channelInfo) {
+                    cache[handle] = channelInfo;
+                    cacheUpdated = true;
                 }
             }
 
+            // 保存更新的缓存
+            if (cacheUpdated) {
+                await this.saveCache(cache);
+                cacheUpdated = false; // 重置，避免重复保存
+            }
+
             // 如果有 Channel ID，通过 RSS 获取内容
-            if (channelId) {
+            if (channelInfo?.channelId) {
                 try {
-                    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+                    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelInfo.channelId}`;
                     const feed = await parser.parseURL(rssUrl);
 
                     if (feed.items && feed.items.length > 0) {
                         const latest = feed.items[0];
+                        const channelName = feed.title || cleanName;
                         results.push({
                             title: latest.title || 'Unknown Title',
                             url: latest.link || '',
-                            author: cleanName,
+                            author: channelName,
+                            authorId: handle,
+                            authorAvatar: channelInfo.avatar,
                             publishedAt: latest.pubDate ? new Date(latest.pubDate) : new Date(),
                             source: 'YouTube'
                         });
-                        console.log(`[YouTube] Got latest video via RSS for ${cleanName}: ${latest.title}`);
+                        console.log(`[YouTube] Got latest video for ${cleanName} (${channelName}): ${latest.title}`);
                     }
                 } catch (e) {
                     console.error(`[YouTube] RSS fetch failed for ${cleanName}:`, e);
@@ -155,10 +135,7 @@ export class YouTubeScraper extends BaseScraper {
             }
         }
 
-        if (browserContext) {
-            await browserContext.close();
-        }
-
         return results;
     }
 }
+
