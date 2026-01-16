@@ -1,60 +1,90 @@
 # DailyReading
 [简体中文](./README_zh.md)
 
-A smart reading assistant that integrates multi-source scraping and AI automated synchronization. It automatically filters content from YouTube, Bilibili, and RSS feeds, and utilizes Playwright automation to sync content to Google NotebookLM, distributing and generating daily reading summaries for you.
+A smart reading assistant that integrates multi-source scraping and AI automated synchronization. It automatically filters content from YouTube, Bilibili, and RSS feeds, extracts subtitles/transcripts, and syncs to Google NotebookLM for generating daily reading summaries.
 
-## 🖥 Core Component: Dashboard
+![Dashboard Screenshot](./screenshot.png)
 
-This project provides a full-featured visual dashboard, eliminating the need to manually edit complex JSON configuration files or run terminal commands.
+## ✨ Features
 
-- **Visual Configuration**: Directly add YouTube Channel IDs, Bilibili UP IDs, and RSS feed links in the sidebar.
-- **Header Control Center**:
-    - **🔐 Session Authorization**: The authorization button is located on the right side of the header with real-time status awareness (amber breathing light indicates authorization required, blue indicates authorized).
-    - **▶ Task Control**: Click **"Start Routine"** to trigger the full process. Built-in **Pre-flight Guard** will automatically intercept and guide you to log in if not authorized.
-- **Intelligence Feed**:
-    - Displays daily scraped content in card format.
-    - Quick links to directly open notebooks generated in NotebookLM.
+- **Multi-source Content Scraping**
+  - YouTube channels (via RSS feeds)
+  - Bilibili UP主 (via WBI API)
+  - RSS feeds
+  
+- **Subtitle/Transcript Extraction**
+  - Bilibili: Auto-extracts Chinese subtitles via HTTP API + SESSDATA authentication
+  - YouTube: Native transcript support
+  
+- **Smart Source Management**
+  - Visual dashboard with channel avatars and names
+  - Toggle switches to enable/disable individual sources
+  - Auto-caching of channel info (name, avatar)
+
+- **NotebookLM Integration**
+  - Automated sync via Playwright
+  - Direct links to generated notebooks
 
 ## 🛠 Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) (App Router)
-- **Automation**: [Playwright](https://playwright.dev/) & [Playwright Extra](https://github.com/berstend/puppeteer-extra)
-- **Data Flow**: Real-time task progress feedback based on Server-Sent Events (SSE).
+- **Scraping**: 100% HTTP-based for YouTube and Bilibili (no browser needed)
+- **Automation**: [Playwright](https://playwright.dev/) for NotebookLM sync only
+- **Real-time Updates**: Server-Sent Events (SSE) for task progress
 
 ## 🚀 Quick Start
 
-### 1. Installation and Execution
+### 1. Installation
 
 ```bash
 npm install
 npx playwright install chromium
-npm run dev # Launch dashboard
-npm run run-sync # Run sync task only (CLI mode)
+npm run dev
 ```
-Access [http://localhost:3000](http://localhost:3000) to enter the dashboard.
 
-### 2. Configuration and Sync
+Access [http://localhost:3000](http://localhost:3000) to open the dashboard.
 
-1. **Set Chrome Path**:
-   - In the **"System Browser"** section of the sidebar, enter the full path of the Google Chrome executable on your computer.
-   - **Mac Example**: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-   - **Windows Example**: `C:\Program Files\Google\Chrome\Application\chrome.exe`
-2. **Set Content Sources**: Fill in the content sources in the sidebar and click **"Save Config"**.
-3. **Session Authorization**: Click **"🔐 NotebookLM Auth Required"** in the header. Complete login in the pop-up native Chrome and close it.
-4. **Start Routine**: Click **"▶ Start Routine"** in the header. If not authorized, the system will automatically guide you to log in.
+### 2. Configuration
 
-## 🖥 Cross-platform (Windows) Suggestions
+1. **Add Sources**: Add YouTube handles (`@channel`) and Bilibili UIDs in the dashboard
+2. **Bilibili SESSDATA**: Add your SESSDATA in Settings for subtitle extraction (required for Bilibili)
+3. **Chrome Path**: Set your Chrome executable path for NotebookLM sync
+4. **NotebookLM Auth**: Click the NotebookLM button to authorize
 
-- **Dependency Installation**: Windows users also need to run `npx playwright install chromium` for basic scrapers.
-- **Path Format**: When configuring the path in the UI, Windows users should directly paste the full path of the `.exe` file.
-- **Automated Execution**: macOS users can use the `.plist` file in the `deploy/` directory with LaunchAgents. Windows users are recommended to use the **"Task Scheduler"**, creating a task to trigger the background command periodically.
+### 3. Run Sync
+
+Click **"Start Routine"** to:
+1. Scrape latest videos from all enabled sources
+2. Extract Bilibili subtitles (if SESSDATA configured)
+3. Sync content to NotebookLM
 
 ## 📂 Project Structure
 
-- `src/app/`: Dashboard frontend code and API routes (including the `/api/status` detection interface).
-- `src/lib/notebooklm.ts`: Core NotebookLM automation sync logic.
-- `src/lib/session_manager.ts`: Unified local session management tool.
+```
+src/
+├── app/              # Dashboard UI & API routes
+├── lib/
+│   ├── scrapers/     # Platform scrapers (YouTube, Bilibili, RSS)
+│   ├── coordinator.ts # Scraping orchestration
+│   ├── main.ts       # Daily routine logic
+│   └── notebooklm.ts # NotebookLM automation
+```
+
+## 🔧 How Bilibili Subtitle Extraction Works
+
+1. Uses WBI API to fetch video lists (no browser needed)
+2. Authenticates with SESSDATA cookie for subtitle access
+3. Downloads and formats Chinese subtitles
+4. Syncs formatted content to NotebookLM
+
+## 🖥 Cross-platform Notes
+
+- **macOS**: Use LaunchAgents with the `.plist` in `deploy/` for scheduling
+- **Windows**: Use Task Scheduler for automated runs
+- **Chrome Path Examples**:
+  - Mac: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
+  - Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe`
 
 ---
 
-*Note: This project is intended to improve personal efficiency. Please comply with the terms of use of each platform.*
+*Note: This project is for personal productivity. Please comply with each platform's terms of use.*

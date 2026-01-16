@@ -1,60 +1,89 @@
 # DailyReading
 [English](./README.md)
 
-这是一个集成了多源抓取与 AI 自动化同步的智能阅读助手。它能够自动从 YouTube、Bilibili 和 RSS 订阅源中筛选内容，并利用 Playwright 自动化技术将内容同步到 Google NotebookLM，为你分发并生成每日阅读总结。
+这是一个集成了多源抓取与 AI 自动化同步的智能阅读助手。它能够自动从 YouTube、Bilibili 和 RSS 订阅源中筛选内容，提取字幕/转写文本，并同步到 Google NotebookLM 生成每日阅读总结。
 
+![Dashboard 截图](./screenshot.png)
 
-## 🖥 核心组件：管理后台 (Dashboard)
+## ✨ 功能特性
 
-本项目提供了一个完整的可视化管理后台，你无需手动编辑复杂的 JSON 配置文件或运行终端命令。
+- **多源内容抓取**
+  - YouTube 频道（通过 RSS 订阅）
+  - Bilibili UP主（通过 WBI API）
+  - RSS 订阅源
 
-- **可视化配置**：在側边栏直接添加 YouTube 频道 ID、Bilibili UP 主 ID 以及 RSS 订阅链接。
-- **页头控制中心**：
-    - **🔐 会话授权**：授权按钮位于页头右侧，具有实时状态感知功能（琥珀色呼吸灯表示需授权，蓝色表示已授权）。
-    - **▶ 任务控制**：点击 **"Start Routine"** 即可触发完整流程。内置**启动守卫**，若未授权将自动拦截并引导登录。
-- **实时活动流 (Intelligence Feed)**：
-    - 以卡片形式展示每日抓取到的内容。
-    - 快速链接直接打开 NotebookLM 中生成的笔记本。
+- **字幕/转写提取**
+  - Bilibili：通过 HTTP API + SESSDATA 认证自动提取中文字幕
+  - YouTube：原生转写支持
+
+- **智能来源管理**
+  - 可视化仪表板，显示频道头像和名称
+  - 开关按钮可启用/禁用各个来源
+  - 自动缓存频道信息（名称、头像）
+
+- **NotebookLM 集成**
+  - 通过 Playwright 自动化同步
+  - 直接链接到生成的笔记本
 
 ## 🛠 技术栈
 
-- **框架**：[Next.js](https://nextjs.org/) (App Router)
-- **自动化**：[Playwright](https://playwright.dev/) & [Playwright Extra](https://github.com/berstend/puppeteer-extra)
-- **数据流**：基于 Server-Sent Events (SSE) 的实时任务进度反馈。
+- **框架**：[Next.js](https://nextjs.org/)（App Router）
+- **抓取**：YouTube 和 Bilibili 100% 纯 HTTP（无需浏览器）
+- **自动化**：[Playwright](https://playwright.dev/) 仅用于 NotebookLM 同步
+- **实时更新**：基于 Server-Sent Events (SSE) 的任务进度反馈
 
 ## 🚀 快速开始
 
-### 1. 安装与启动
+### 1. 安装
 
 ```bash
 npm install
 npx playwright install chromium
-npm run dev # 启动管理后台
-npm run run-sync # 仅启动同步任务 (CLI 模式)
+npm run dev
 ```
-访问 [http://localhost:3000](http://localhost:3000) 进入管理后台。
 
-### 2. 配置与同步
+访问 [http://localhost:3000](http://localhost:3000) 打开仪表板。
 
-1. **设置 Chrome 路径**：
-   - 在左侧边栏的 **"System Browser"** 区域，填入你电脑上 Google Chrome 的可执行文件全路径。
-   - **Mac 示例**：`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-   - **Windows 示例**：`C:\Program Files\Google\Chrome\Application\chrome.exe`
-2. **设置内容来源**：在侧边栏填入内容源，点击 **"Save Config"**。
-3. **账号授权**：点击顶部的 **"🔐 NotebookLM Auth Required"**。在弹出的原生 Chrome 中完成登录并关闭即可。
-4. **开始同步**：点击顶部的 **"Start Routine"**。
+### 2. 配置
 
-## 🖥 跨平台 (Windows) 建议
+1. **添加来源**：在仪表板中添加 YouTube handle（`@channel`）和 Bilibili UID
+2. **Bilibili SESSDATA**：在设置中添加你的 SESSDATA 以提取字幕（B站功能必需）
+3. **Chrome 路径**：设置 Chrome 可执行文件路径用于 NotebookLM 同步
+4. **NotebookLM 授权**：点击 NotebookLM 按钮进行授权
 
-- **依赖安装**：Windows 用户同样需要运行 `npx playwright install chromium` 来支持基础爬虫。
-- **路径格式**：在 UI 中配置路径时，Windows 用户请直接粘贴 `.exe` 文件的完整路径。
-- **自动化运行**：macOS 用户可以使用 `deploy/` 目录下的 `.plist` 配合 LaunchAgents。Windows 用户建议使用系统自带的 **"任务计划程序 (Task Scheduler)"**，创建一个定时触发后台命令的任务。
+### 3. 运行同步
 
-## 📂 项目结构
+点击 **"Start Routine"** 会依次执行：
+1. 从所有启用的来源抓取最新视频
+2. 提取 Bilibili 字幕（如已配置 SESSDATA）
+3. 同步内容到 NotebookLM
 
-- `src/app/`: 管理后台界面与 API 路由（包括 `/api/status` 状态检测接口）。
-- `src/lib/notebooklm.ts`: 核心的 NotebookLM 脚本同步逻辑。
-- `src/lib/session_manager.ts`: 统一的本地会话管理工具。
+## � 项目结构
+
+```
+src/
+├── app/              # 仪表板 UI 和 API 路由
+├── lib/
+│   ├── scrapers/     # 平台爬虫（YouTube、Bilibili、RSS）
+│   ├── coordinator.ts # 抓取协调器
+│   ├── main.ts       # 每日任务逻辑
+│   └── notebooklm.ts # NotebookLM 自动化
+```
+
+## 🔧 Bilibili 字幕提取原理
+
+1. 使用 WBI API 获取视频列表（无需浏览器）
+2. 通过 SESSDATA Cookie 认证获取字幕权限
+3. 下载并格式化中文字幕
+4. 将格式化内容同步到 NotebookLM
+
+## 🖥 跨平台说明
+
+- **macOS**：使用 `deploy/` 目录中的 `.plist` 配合 LaunchAgents 定时运行
+- **Windows**：使用任务计划程序自动运行
+- **Chrome 路径示例**：
+  - Mac：`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
+  - Windows：`C:\Program Files\Google\Chrome\Application\chrome.exe`
 
 ---
 
