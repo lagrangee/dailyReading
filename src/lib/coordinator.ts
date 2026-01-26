@@ -84,8 +84,9 @@ export class ScrapeCoordinator {
             await writeConfig(config);
         }
 
-        const history = await readHistory();
-        return allResults.filter(link => !history.includes(link.url));
+        // 使用 Set 进行 O(1) 查找，避免数组遍历
+        const historySet = new Set(await readHistory());
+        return allResults.filter(link => !historySet.has(link.url));
     }
 
     /**
