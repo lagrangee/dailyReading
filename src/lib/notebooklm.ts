@@ -1,6 +1,7 @@
 import { chromium, BrowserContext, Page } from 'playwright';
 import { ScrapedLink } from './scrapers/base';
 import { readConfig } from './config';
+import { execSync } from 'child_process';
 import path from 'path';
 
 import { getSessionDir, clearSessionLock } from './session_manager';
@@ -8,8 +9,25 @@ import { getSessionDir, clearSessionLock } from './session_manager';
 export class NotebookLMClient {
     private context: BrowserContext | null = null;
 
+    private runAgent(args: string[]): string {
+        const cmd = `agent-browser ${args.join(' ')} --cdp 9222`;
+        console.log(`[NotebookLM] Agent Executing: ${cmd}`);
+        try {
+            return execSync(cmd, { encoding: 'utf-8' });
+        } catch (error: any) {
+            console.warn(`[NotebookLM] Agent Command failed: ${cmd}`, error.message);
+            throw error;
+        }
+    }
+
     async init() {
         console.log('[NotebookLM] >>> LAUNCH START');
+
+        // 彻底清理可能的旧进程和环境污染
+        try {
+            // 暂时清除环境干扰并关闭
+            execSync('AGENT_BROWSER_EXECUTABLE_PATH= agent-browser close', { stdio: 'ignore' });
+        } catch (e) { }
 
         await clearSessionLock('notebooklm');
         const profilePath = await getSessionDir('notebooklm');
@@ -28,7 +46,8 @@ export class NotebookLMClient {
             args: [
                 '--disable-blink-features=AutomationControlled',
                 '--password-store=basic',
-                '--window-size=1280,800'
+                '--window-size=1280,800',
+                '--remote-debugging-port=9222'
             ],
         });
 
@@ -76,17 +95,25 @@ export class NotebookLMClient {
         } else {
             console.log(`[NotebookLM] Creating: ${notebookName}`);
             await page.locator('mat-card').filter({ hasText: '新建笔记本' }).click();
-            const closeButton = page.getByRole('button', { name: '关闭对话框' });
-            try { await closeButton.waitFor({ state: 'visible', timeout: 15000 }); } catch (e) { }
+            await page.waitForTimeout(2000);
 
-            if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+            // 新界面：关闭自动弹出的资料上传建议窗口
+            const closeButton = page.getByRole('button', { name: '关闭' });
+            try {
+                await closeButton.waitFor({ state: 'visible', timeout: 5000 });
                 await closeButton.click();
                 await page.waitForTimeout(500);
+                console.log('[NotebookLM] Closed initial popup');
+            } catch (e) {
+                console.log('[NotebookLM] No popup to close');
             }
 
-            await page.locator('input').click();
-            await page.locator('input').fill(notebookName);
-            await page.locator('input').press('Enter');
+            // 修改笔记本名称
+            const titleInput = page.locator('input.title-input');
+            await titleInput.click();
+            await titleInput.fill('');
+            await titleInput.fill(notebookName);
+            await titleInput.press('Enter');
             await page.waitForTimeout(1000);
         }
 
@@ -95,6 +122,11 @@ export class NotebookLMClient {
 
     async getNotebookUrl(page: Page): Promise<string> {
         return page.url();
+    }
+
+    // 截断作者/频道名称，最大 5 个字符
+    private truncateName(name: string, maxLength: number = 5): string {
+        return name.length > maxLength ? name.slice(0, maxLength) : name;
     }
 
     async addSources(page: Page, links: ScrapedLink[], onProgress?: (msg: string) => void) {
@@ -109,7 +141,7 @@ export class NotebookLMClient {
             const link = youtubeLinks[i];
             console.log(`[NotebookLM] [YouTube ${i + 1}/${youtubeLinks.length}] ${link.title}`);
             if (onProgress) onProgress(`YouTube (${i + 1}/${youtubeLinks.length})`);
-            try { await this.addYouTubeSource(page, link.url); } catch (e) { console.error('[YouTube] YT Error:', e); }
+            try { await this.addYouTubeSource(page, link); } catch (e) { console.error('[YouTube] YT Error:', e); }
         }
 
         // 2. Bilibili (直接使用 pre-extracted 文本)
@@ -123,7 +155,9 @@ export class NotebookLMClient {
                 (link.transcript ? `# ${link.title}\n\n## 视频简介\n${link.description || ''}\n\n## 字幕内容\n${link.transcript}` : null);
 
             if (textContent) {
-                await this.addTextSource(page, link.title, textContent);
+                // B站来源标题格式：UP主名称(截断)-视频标题
+                const sourceTitle = `${this.truncateName(link.author)}-${link.title}`;
+                await this.addTextSource(page, sourceTitle, textContent);
                 console.log(`[NotebookLM] ✅ SUCCESS: Bilibili content added.`);
             } else {
                 console.warn(`[NotebookLM] ⏭️ SKIP: Link reached addSources without transcript: ${link.url}`);
@@ -137,22 +171,87 @@ export class NotebookLMClient {
         }
     }
 
-    private async addYouTubeSource(page: Page, url: string) {
+    private async addYouTubeSource(page: Page, link: ScrapedLink) {
         await page.getByRole('button', { name: '添加来源' }).click();
         await page.waitForTimeout(500);
-        await page.getByText('YouTube', { exact: true }).click();
+        // 新界面：YouTube 已合并到"网站"按钮
+        await page.getByRole('button', { name: '网站' }).click();
         await page.waitForTimeout(500);
-        await page.getByRole('textbox', { name: '粘贴 YouTube 网址' }).fill(url);
+        await page.getByRole('textbox', { name: '输入网址' }).fill(link.url);
         await page.getByRole('button', { name: '插入' }).click();
-        await page.waitForTimeout(2000);
+
+        // YouTube 来源标题格式：YouTuber名称(截断)-视频标题
+        const sourceTitle = `${this.truncateName(link.author)}-${link.title}`;
+        console.log(`[NotebookLM] Renaming YouTube source to "${sourceTitle}"...`);
+
+        // 等待来源加载完成并重命名
+        await this.renameLatestSource(page, sourceTitle);
+    }
+
+    // 重命名最新添加的来源（通用方法，适用于 YouTube/网站来源）
+    private async renameLatestSource(page: Page, newTitle: string) {
+        try {
+            // 等待来源加载完成 - 查找最新的来源容器中的"更多"按钮
+            let moreButton = null;
+            for (let attempt = 0; attempt < 60; attempt++) {
+                await page.waitForTimeout(1000);
+
+                // 获取第一个来源容器（最新添加的）的"更多"按钮
+                const containers = page.locator('.single-source-container');
+                const firstContainer = containers.first();
+                const btn = firstContainer.locator('button[aria-label="更多"]');
+
+                if (await btn.isVisible().catch(() => false)) {
+                    moreButton = btn;
+                    console.log(`[NotebookLM] Source loaded after ${attempt + 1}s, "More" button found`);
+                    break;
+                }
+
+                if (attempt % 10 === 9) {
+                    console.log(`[NotebookLM] Still waiting... (${attempt + 1}s)`);
+                }
+            }
+
+            if (!moreButton) {
+                throw new Error('Could not find "More" button after 60 seconds');
+            }
+
+            // 点击"更多"按钮
+            await moreButton.click();
+            console.log('[NotebookLM] Clicked "More" button');
+            await page.waitForTimeout(500);
+
+            // 点击"重命名来源"
+            const renameMenuItem = page.getByText('重命名来源');
+            await renameMenuItem.waitFor({ state: 'visible', timeout: 5000 });
+            await renameMenuItem.click();
+            console.log('[NotebookLM] Clicked "Rename source"');
+            await page.waitForTimeout(500);
+
+            // 输入新名称
+            const renameInput = page.getByRole('textbox', { name: '来源名称' });
+            await renameInput.waitFor({ state: 'visible', timeout: 5000 });
+            await renameInput.fill('');
+            await renameInput.fill(newTitle);
+            console.log(`[NotebookLM] Entered new name: "${newTitle}"`);
+
+            // 点击"保存"
+            await page.getByRole('button', { name: '保存' }).click();
+            await page.waitForTimeout(500);
+
+            console.log(`[NotebookLM] ✅ SUCCESS: Renamed to "${newTitle}"`);
+        } catch (e: any) {
+            console.error(`[NotebookLM] ❌ FAILED rename for "${newTitle}":`, e.message);
+        }
     }
 
     private async addWebLinksBatch(page: Page, urls: string[]) {
         await page.getByRole('button', { name: '添加来源' }).click();
         await page.waitForTimeout(500);
-        await page.locator('span').filter({ hasText: '网站' }).nth(2).click();
+        // 新界面：使用按钮角色定位"网站"
+        await page.getByRole('button', { name: '网站' }).click();
         await page.waitForTimeout(500);
-        await page.getByRole('textbox', { name: '粘贴网址' }).fill(urls.join('\n'));
+        await page.getByRole('textbox', { name: '输入网址' }).fill(urls.join('\n'));
         await page.getByRole('button', { name: '插入' }).click();
         await page.waitForTimeout(3000);
     }
@@ -160,11 +259,80 @@ export class NotebookLMClient {
     private async addTextSource(page: Page, title: string, content: string) {
         await page.getByRole('button', { name: '添加来源' }).click();
         await page.waitForTimeout(500);
-        await page.getByText('复制的文字', { exact: true }).click();
+        // 新界面：使用按钮角色定位"复制的文字"
+        await page.getByRole('button', { name: '复制的文字' }).click();
         await page.waitForTimeout(500);
-        await page.locator('textarea.text-area').fill(content);
+
+        // 使用 evaluate 填充内容，避免 Playwright 在日志中输出完整字幕
+        const textbox = page.getByRole('textbox', { name: '粘贴的文字' });
+        await textbox.waitFor({ state: 'visible', timeout: 5000 });
+        console.log(`[NotebookLM] Filling text content (${content.length} chars)...`);
+        await textbox.evaluate((el: HTMLTextAreaElement, text: string) => {
+            el.value = text;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }, content);
+        await page.waitForTimeout(300);
+
         await page.getByRole('button', { name: '插入' }).click();
-        await page.waitForTimeout(2000);
+
+        // 等待插入完成并在侧边栏出现（字幕内容较多时需要更长的 loading 时间）
+        console.log(`[NotebookLM] Renaming source to "${title}"...`);
+
+        try {
+            // 1. 等待来源处理完成 - 使用正确的容器选择器
+            // 等待 shimmer 加载状态结束，"更多"按钮出现
+            console.log('[NotebookLM] Waiting for source to finish loading...');
+
+            let moreButton = null;
+            for (let attempt = 0; attempt < 60; attempt++) {
+                await page.waitForTimeout(1000);
+
+                // 查找包含"粘贴的文字"的来源容器中的"更多"按钮
+                const container = page.locator('.single-source-container').filter({ hasText: '粘贴的文字' }).first();
+                const btn = container.locator('button[aria-label="更多"]');
+
+                if (await btn.isVisible().catch(() => false)) {
+                    moreButton = btn;
+                    console.log(`[NotebookLM] Source loaded after ${attempt + 1}s, "More" button found`);
+                    break;
+                }
+
+                if (attempt % 10 === 9) {
+                    console.log(`[NotebookLM] Still waiting... (${attempt + 1}s)`);
+                }
+            }
+
+            if (!moreButton) {
+                throw new Error('Could not find "More" button after 60 seconds');
+            }
+
+            // 2. 点击"更多"按钮（可以直接点击，不需要先 hover）
+            await moreButton.click();
+            console.log('[NotebookLM] Clicked "More" button');
+            await page.waitForTimeout(500);
+
+            // 3. 点击"重命名来源"菜单项
+            const renameMenuItem = page.getByText('重命名来源');
+            await renameMenuItem.waitFor({ state: 'visible', timeout: 5000 });
+            await renameMenuItem.click();
+            console.log('[NotebookLM] Clicked "Rename source"');
+            await page.waitForTimeout(500);
+
+            // 4. 在弹出的对话框中输入新名称
+            const renameInput = page.getByRole('textbox', { name: '来源名称' });
+            await renameInput.waitFor({ state: 'visible', timeout: 5000 });
+            await renameInput.fill('');
+            await renameInput.fill(title);
+            console.log(`[NotebookLM] Entered new name: "${title}"`);
+
+            // 5. 点击"保存"按钮
+            await page.getByRole('button', { name: '保存' }).click();
+            await page.waitForTimeout(500);
+
+            console.log(`[NotebookLM] ✅ SUCCESS: Renamed to "${title}"`);
+        } catch (e: any) {
+            console.error(`[NotebookLM] ❌ FAILED rename for "${title}":`, e.message);
+        }
     }
 
     async askForSummary(page: Page) {

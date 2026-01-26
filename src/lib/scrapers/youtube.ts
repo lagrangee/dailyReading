@@ -115,19 +115,24 @@ export class YouTubeScraper extends BaseScraper {
                     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelInfo.channelId}`;
                     const feed = await parser.parseURL(rssUrl);
 
+                    // 获取最近 5 条视频（增量更新，由 history 过滤已处理的）
+                    const MAX_ITEMS = 5;
                     if (feed.items && feed.items.length > 0) {
-                        const latest = feed.items[0];
+                        const items = feed.items.slice(0, MAX_ITEMS);
                         const channelName = feed.title || cleanName;
-                        results.push({
-                            title: latest.title || 'Unknown Title',
-                            url: latest.link || '',
-                            author: channelName,
-                            authorId: handle,
-                            authorAvatar: channelInfo.avatar,
-                            publishedAt: latest.pubDate ? new Date(latest.pubDate) : new Date(),
-                            source: 'YouTube'
-                        });
-                        console.log(`[YouTube] Got latest video for ${cleanName} (${channelName}): ${latest.title}`);
+
+                        for (const item of items) {
+                            results.push({
+                                title: item.title || 'Unknown Title',
+                                url: item.link || '',
+                                author: channelName,
+                                authorId: handle,
+                                authorAvatar: channelInfo.avatar,
+                                publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
+                                source: 'YouTube'
+                            });
+                        }
+                        console.log(`[YouTube] Got ${items.length} videos for ${cleanName} (${channelName})`);
                     }
                 } catch (e) {
                     console.error(`[YouTube] RSS fetch failed for ${cleanName}:`, e);

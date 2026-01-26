@@ -244,7 +244,7 @@ ${content.transcript || '无字幕'}
 
                 const params = {
                     mid: cleanMid,
-                    ps: 1,
+                    ps: 5,  // 获取最近 10 条（增量更新，由 history 过滤已处理的）
                     pn: 1,
                     platform: 'web',
                     web_location: 1550101,
@@ -265,18 +265,22 @@ ${content.transcript || '无字幕'}
                 const res = await fetch(url, { headers: fetchHeaders });
                 const data = await res.json();
 
-                if (data.code === 0 && data.data?.list?.vlist?.length > 0) {
-                    const video = data.data.list.vlist[0];
-                    const videoUrl = `https://www.bilibili.com/video/${video.bvid}/`;
-                    console.log(`[Bilibili] Found Latest (WBI API): ${videoUrl}`);
-                    results.push({
-                        title: video.title,
-                        url: videoUrl,
-                        author: video.author || cleanMid,
-                        authorId: String(video.mid || cleanMid),  // UP 主 ID，用于匹配配置
-                        publishedAt: new Date(video.created * 1000),
-                        source: 'Bilibili'
-                    });
+                if (data.code === 0) {
+                    const vlist = data.data?.list?.vlist || [];
+                    for (const video of vlist) {
+                        const videoUrl = `https://www.bilibili.com/video/${video.bvid}/`;
+                        results.push({
+                            title: video.title,
+                            url: videoUrl,
+                            author: video.author || cleanMid,
+                            authorId: String(video.mid || cleanMid),
+                            publishedAt: new Date(video.created * 1000),
+                            source: 'Bilibili'
+                        });
+                    }
+                    if (vlist.length > 0) {
+                        console.log(`[Bilibili] Found ${vlist.length} videos for ${cleanMid}`);
+                    }
                 } else {
                     console.warn(`[Bilibili] API returned code ${data.code} for ${cleanMid}: ${data.message}`);
                 }
