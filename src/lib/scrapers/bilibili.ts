@@ -268,6 +268,24 @@ ${content.transcript || '无字幕'}
                 if (data.code === 0) {
                     const vlist = data.data?.list?.vlist || [];
                     for (const video of vlist) {
+                        // 过滤掉时长小于 10 分钟的视频
+                        // length 格式通常为 "MM:SS" 或 "HH:MM:SS"
+                        const durationStr = video.length;
+                        let durationSeconds = 0;
+                        if (durationStr) {
+                            const parts = durationStr.split(':').map(Number);
+                            if (parts.length === 2) {
+                                durationSeconds = parts[0] * 60 + parts[1];
+                            } else if (parts.length === 3) {
+                                durationSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                            }
+                        }
+
+                        if (durationSeconds < 600) {
+                            console.log(`[Bilibili] Skipping short video: ${video.title} (${durationStr})`);
+                            continue;
+                        }
+
                         const videoUrl = `https://www.bilibili.com/video/${video.bvid}/`;
                         results.push({
                             title: video.title,
