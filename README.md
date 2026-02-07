@@ -85,6 +85,51 @@ src/
   - Mac: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
   - Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe`
 
+## 🌐 API Integration (Beta)
+
+You can trigger the daily sync routine programmatically via the API, for example from **OpenClaw** or **Cron**.
+
+### Trigger Sync
+
+- **Endpoint**: `POST /api/trigger`
+- **Description**: Starts the daily routine (scrape -> extract -> sync to NotebookLM). The browser will close automatically after completion.
+- **Timeout**: The process may take **1-5 minutes** depending on content volume. Ensure your client timeout is set accordingly.
+
+#### Response Example (Success)
+
+```json
+{
+  "status": "success",
+  "message": "Successfully synced 5 items",
+  "scrapedItems": [
+    { "title": "New Video 1", "url": "https://...", "source": "Bilibili" }
+  ],
+  "notebookUrl": "https://notebooklm.google.com/notebook/..."
+}
+```
+
+#### Response Example (No Content)
+
+```json
+{
+  "status": "no_content",
+  "message": "No new content found",
+  "scrapedItems": []
+}
+```
+
+#### Error Response
+
+Returns status `500` or `429` (if already running).
+
+```json
+{
+  "status": "failed",
+  "message": "Error message details",
+  "error": "Full error stack..."
+}
+```
+
 ---
 
 *Note: This project is for personal productivity. Please comply with each platform's terms of use.*
