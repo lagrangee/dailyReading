@@ -3,6 +3,7 @@ import { NotebookLMClient } from './notebooklm';
 import { BilibiliScraper } from './scrapers/bilibili';
 import { readConfig } from './config';
 import { addLog, updateLogById } from './logger';
+import { slog, slogPhase } from './slog';
 import { addToHistory } from './history';
 import { randomUUID } from 'crypto';
 
@@ -29,7 +30,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
     isRunning = true;
     let client: NotebookLMClient | null = null;
 
-    console.log('[Main] >>> DAILY ROUTINE START');
+    slogPhase('DAILY ROUTINE START');
     try {
         const config = await readConfig();
         const coordinator = new ScrapeCoordinator();
@@ -39,9 +40,9 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
         try {
             if (onProgress) onProgress('Initializing scrapers...');
             links = await coordinator.scrapeAll(config, onProgress);
-            console.log(`[Main] Scraped ${links.length} items total.`);
+            slog('Main', 'info', { title: `Scraped ${links.length} items total` });
         } catch (e) {
-            console.error('[Main] Scrape phase failed:', e);
+            slog('Main', 'fail', { title: 'Scrape phase failed', detail: String(e) });
             if (onProgress) onProgress(`Scrape failed: ${e}`);
             throw e; // Re-throw to be caught by outer try-catch
         }
@@ -56,7 +57,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
                 linksScraped: 0,
                 notebookSyncStatus: 'pending'
             });
-            console.log('[Main] No links found. Exiting.');
+            slog('Main', 'info', { title: 'No new content found' });
             return {
                 status: 'no_content',
                 message: 'No new content found',
@@ -67,17 +68,18 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
         // --- 前置提取 Bilibili 字幕（使用 HTTP API + Cookie） ---
         const bilibiliLinks = links.filter(l => l.source === 'Bilibili');
         if (bilibiliLinks.length > 0) {
+            slogPhase(`Bilibili Transcript Extraction (${bilibiliLinks.length} videos)`);
             if (onProgress) onProgress(`Extracting transcripts for ${bilibiliLinks.length} Bilibili videos...`);
             const bilibiliScraper = new BilibiliScraper();
             const sessdata = config.bilibili_sessdata;
 
             if (!sessdata) {
-                console.warn('[Main] ⚠️ No bilibili_sessdata configured, skipping subtitle extraction');
+                slog('Bilibili', 'warn', { title: 'No SESSDATA configured, skipping subtitle extraction' });
                 if (onProgress) onProgress('Warning: No Bilibili SESSDATA configured');
             } else {
                 let configUpdated = false;
                 for (const link of bilibiliLinks) {
-                    console.log(`[Main] Pre-extracting: ${link.url}`);
+                    slog('Bilibili', 'info', { author: link.author, title: link.title, detail: 'Extracting transcript...' });
                     try {
                         const content = await bilibiliScraper.getVideoContent(link.url, sessdata);
                         if (content && content.transcript && content.transcript.trim().length > 0) {
@@ -85,9 +87,9 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
                             link.formattedContent = bilibiliScraper.formatForNotebookLM(content);
                             link.transcript = content.transcript;
                             link.description = content.description;
-                            console.log(`[Main] ✅ Success: Extracted transcript for ${link.title}`);
+                            slog('Bilibili', 'success', { author: link.author, title: link.title, detail: `Transcript: ${content.transcript!.length} chars` });
                         } else {
-                            console.warn(`[Main] ⏭️ No transcript found for: ${link.title}`);
+                            slog('Bilibili', 'skip', { author: link.author, title: link.title, detail: 'No transcript' });
                         }
 
                         // 更新配置中的 source 信息（名称和头像）
@@ -106,7 +108,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
                             }
                         }
                     } catch (e) {
-                        console.error(`[Main] Failed to extract ${link.url}:`, e);
+                        slog('Bilibili', 'fail', { author: link.author, title: link.title, detail: String(e) });
                     }
                 }
 
@@ -114,7 +116,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
                 if (configUpdated) {
                     const { writeConfig } = await import('./config');
                     await writeConfig(config);
-                    console.log('[Main] Config updated with source info');
+                    slog('Main', 'info', { title: 'Config updated with source info' });
                 }
             }
         }
@@ -137,7 +139,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
                 linksScraped: links.length,
                 notebookSyncStatus: 'pending'
             });
-            console.log('[Main] No valid content found after filtering.');
+            slog('Main', 'info', { title: 'No valid content after filtering' });
             return {
                 status: 'no_content',
                 message: 'No transcript-available content found',
@@ -166,6 +168,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
         let notebookUrl = '';
 
         try {
+            slogPhase('NotebookLM Sync');
             if (onProgress) onProgress('Launching NotebookLM Context...');
             await client.init();
 
@@ -199,7 +202,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
             };
 
         } catch (error) {
-            console.error('[Main] Sync error:', error);
+            slog('NotebookLM', 'fail', { title: 'Sync error', detail: String(error) });
             await updateLogById(logId, {
                 notebookSyncStatus: 'failed',
                 notebookSyncError: error instanceof Error ? error.message : String(error)
@@ -208,7 +211,7 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
             throw error;
         }
     } catch (e: any) {
-        console.error('[Main] Fatal error:', e);
+        slog('Main', 'fail', { title: 'Fatal error', detail: e.message || String(e) });
         return {
             status: 'failed',
             message: e.message || String(e),
@@ -218,10 +221,10 @@ export async function runDailyRoutine(onProgress?: (msg: string) => void, closeO
     } finally {
         isRunning = false;
         if (closeOnFinish && client) {
-            console.log('[Main] Closing NotebookLM client (auto-close enabled)...');
+            slog('Main', 'info', { title: 'Closing NotebookLM client (auto-close)' });
             await client.close();
         } else {
-            console.log('[Main] Routine finished. Browser stays open (auto-close disabled).');
+            slogPhase('DAILY ROUTINE COMPLETE');
         }
     }
 }
